@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "chip": "t113s3",
+  "soc_family": "sun8iw20p1",
+  "fel_device_id": "0x00185900",
+  "fes_device_id": "0x00161000",
+  "memory_type": "ddr3",
+  "memory_size_mib": 128,
+  "dram_clock_mhz": 792,
+  "storage_type": "spinand",
+  "storage_capacity_mib": 256,
+  "product_name": "dshanpi-t113s3pro",
+  "output_name": "t113s3-ddr3-spinand-dshanpi-t113s3pro-loader.bin",
+  "expected_output_sha256": "a2e0e97014e70c7043b634138639444026a4e582f5569bb81c845c6d959d1ea5",
+  "purpose": "ram-fes-bootstrap",
+  "flash_payload": false,
+  "container_format": "imagewty-v3",
+  "hardware_validation": "ram-bootstrap-passed",
+  "source_project": "Allwinner Tina 5.0 v1.2 t113/evb1_auto_nand",
+  "source_revision": "local-build-2026-08-22",
+  "entries": [
+    {
+      "role": "mbr-placeholder",
+      "path": "input/sunxi_mbr.fex",
+      "maintype": "12345678",
+      "subtype": "1234567890___MBR",
+      "sha256": "973afd6f8f3a6fe74d83bcb65fb4689d12199958da0f7a5df9bbd17969e7311c",
+      "packed_sha256": "973afd6f8f3a6fe74d83bcb65fb4689d12199958da0f7a5df9bbd17969e7311c",
+      "flash_to_media": false
+    },
+    {
+      "role": "sys-config",
+      "path": "input/sys_config.bin",
+      "maintype": "COMMON",
+      "subtype": "SYS_CONFIG_BIN00",
+      "sha256": "90a22618677b3dabb5a02b0d74206ff15ea46dfde8a36f6e78dc3579825c732b",
+      "packed_sha256": "b4ea27475e1968ef001f37931cca09dd6e4766434667695e829bfd0f32acc269",
+      "flash_to_media": false
+    },
+    {
+      "role": "board-config",
+      "path": "input/board.fex",
+      "maintype": "COMMON",
+      "subtype": "BOARD_CONFIG_BIN",
+      "sha256": "ab1d5b1e29bc04511d1fc6942ae365f3202d5795fa06e3699acfae987fafb245",
+      "packed_sha256": "ab1d5b1e29bc04511d1fc6942ae365f3202d5795fa06e3699acfae987fafb245",
+      "flash_to_media": false
+    },
+    {
+      "role": "dtb-config",
+      "path": "input/sunxi.fex",
+      "maintype": "COMMON",
+      "subtype": "DTB_CONFIG000000",
+      "sha256": "891bd48e9bd14cc8a617a1af86510bfc13319e6dcb43ba1cd4f8d8b0c29fddf8",
+      "packed_sha256": "891bd48e9bd14cc8a617a1af86510bfc13319e6dcb43ba1cd4f8d8b0c29fddf8",
+      "flash_to_media": false
+    },
+    {
+      "role": "fes1",
+      "path": "input/fes1.fex",
+      "maintype": "FES",
+      "subtype": "FES_1-0000000000",
+      "sha256": "0ea0e2654f55afbb075c927617f644d747b591082e961121d3036a8ab703dfc7",
+      "packed_sha256": "0ea0e2654f55afbb075c927617f644d747b591082e961121d3036a8ab703dfc7",
+      "flash_to_media": false
+    },
+    {
+      "role": "uboot",
+      "path": "input/u-boot.fex",
+      "maintype": "12345678",
+      "subtype": "UBOOT_0000000000",
+      "sha256": "47c38d7f2fe1d3ec026e180c0d6ba10206ab4fb780e00d25b878ac424eeac44b",
+      "packed_sha256": "47c38d7f2fe1d3ec026e180c0d6ba10206ab4fb780e00d25b878ac424eeac44b",
+      "flash_to_media": false
+    }
+  ]
+}
