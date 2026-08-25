@@ -1,4 +1,4 @@
-.PHONY: bootstrap build package all
+.PHONY: bootstrap build package validate all
 
 bootstrap:
 	./scripts/bootstrap-buildroot.sh
@@ -8,6 +8,9 @@ build:
 
 package:
 	./scripts/package-mainline-fel.sh
+
+validate:
+	./scripts/validate-local.py
 
 all:
 	./scripts/build-and-package.sh

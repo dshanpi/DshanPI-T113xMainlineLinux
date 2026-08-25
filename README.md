@@ -95,3 +95,4 @@ success requires all of the following:
 - [Troubleshooting](docs/troubleshooting.md)
 - [Frozen FES experiments](docs/frozen-fes-experiments.md)
 - [Logs and evidence](logs/README.md)
+- [Latest line-by-line local validation](logs/local-validation-20260825.txt)

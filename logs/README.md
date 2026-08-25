@@ -18,3 +18,6 @@ t113s3pro-mainline login:
 
 The public repository intentionally excludes the raw Lynx SQLite database
 because it may contain unrelated board and host metadata.
+
+`local-validation-20260825.txt` records every non-hardware gate from the clean
+repository rebuild. Re-run the same gates with `make validate`.

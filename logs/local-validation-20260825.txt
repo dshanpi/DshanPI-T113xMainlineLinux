@@ -1,0 +1,50 @@
+[PASS] T001 source lock pins Buildroot commit
+[PASS] T002 source lock pins Linux 6.18.8
+[PASS] T003 source lock pins U-Boot 2026.07
+[PASS] T004 Buildroot checkout matches source lock
+[PASS] T005 Linux archive hash is pinned
+[PASS] T006 U-Boot archive hash is pinned
+[PASS] T007 required source exists: board/dshanpi/t113s3pro/linux-dts/allwinner/sun8i-t113s-dshanpi-t113s3pro.dts
+[PASS] T008 required source exists: board/dshanpi/t113s3pro/uboot.fragment
+[PASS] T009 required source exists: configs/dshanpi_t113s3pro_nand_defconfig
+[PASS] T010 required source exists: board/dshanpi/t113s3pro/installer-init
+[PASS] T011 shell syntax: scripts/bootstrap-buildroot.sh
+[PASS] T012 shell syntax: scripts/build-and-package.sh
+[PASS] T013 shell syntax: scripts/build.sh
+[PASS] T014 shell syntax: scripts/flash-mainline-fel.sh
+[PASS] T015 shell syntax: scripts/package-mainline-fel.sh
+[PASS] T016 shell syntax: board/dshanpi/t113s3pro/make-fel-installer-initramfs.sh
+[PASS] T017 shell syntax: board/dshanpi/t113s3pro/make-mainline-fel-images.sh
+[PASS] T018 shell syntax: board/dshanpi/t113s3pro/installer-init
+[PASS] T019 Python syntax: scripts/make-openix-plan.py
+[PASS] T020 Python syntax: board/dshanpi/t113s3pro/verify-mainline-uboot.py
+[PASS] T021 Python syntax: scripts/validate-local.py
+[PASS] T022 SPL and U-Boot proper pass same-build verifier
+[PASS] T023 packaged SPL passes independent eGON checks
+[PASS] T024 U-Boot environment is nowhere
+[PASS] T025 U-Boot FAT/SPI environment backends are disabled
+[PASS] T026 FEL artifact checksums verify
+[PASS] T027 clean-build manifest checksums verify
+[PASS] T028 payload archive membership and internal hashes verify
+[PASS] T029 eight redundant SPL eraseblock copies verify
+[PASS] T030 U-Boot redundant image is exactly 4 MiB
+[PASS] T031 installer FIT stays below 8 MiB
+[PASS] T032 payload archive stays below 24 MiB
+[PASS] T033 OpenixCLI plan roles, hashes and ranges verify
+[PASS] T034 boot FIT parses with mainline mkimage
+[PASS] T035 installer FIT parses with mainline mkimage
+[PASS] T036 retired vendor/experimental artifacts are absent
+[PASS] T037 UART3 PB6/PB7 console mapping is present
+[PASS] T038 SPI-NAND fixed partition layout is present
+[PASS] T039 Linux config enables SPI-NAND, UBI and UBIFS
+[PASS] T040 task history contains exactly 232 valid JSON rows
+[PASS] T041 historical cold-boot marker: Trying to boot from sunxi SPI
+[PASS] T042 historical cold-boot marker: U-Boot 2026.07
+[PASS] T043 historical cold-boot marker: ubi0: attached mtd4
+[PASS] T044 historical cold-boot marker: VFS: Mounted root (ubifs filesystem)
+[PASS] T045 historical cold-boot marker: t113s3pro-mainline login:
+[PASS] T046 history retains successful installer task ID
+[PASS] T047 published logs contain no local workspace path
+[PASS] T048 hardware and clean-build manifests remain distinct
+[PASS] T049 no Python bytecode is tracked
+SUMMARY pass=49 fail=0 hardware_current_build=pending
