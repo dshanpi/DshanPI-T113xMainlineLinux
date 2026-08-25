@@ -25,7 +25,7 @@ mod tui;
 mod utils;
 
 /// CLI structure parsed from command line arguments
-use cli::{Cli, Commands};
+use cli::{Cli, Commands, OutputFormat};
 use commands::FlashArgs;
 use utils::TermLogger;
 
@@ -96,6 +96,20 @@ async fn main() -> anyhow::Result<()> {
             };
 
             commands::flash::execute(args).await?;
+        }
+        Some(Commands::BootMainline {
+            plan,
+            device_location,
+            bus,
+            port,
+        }) => {
+            commands::mainline::execute(
+                plan.into(),
+                device_location,
+                bus,
+                port,
+                cli.output == OutputFormat::Jsonl,
+            )?;
         }
     }
 

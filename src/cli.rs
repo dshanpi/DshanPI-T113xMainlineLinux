@@ -2,7 +2,7 @@
 //!
 //! Defines the CLI structure using clap for argument parsing
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 
 /// Main CLI structure
 ///
@@ -21,6 +21,16 @@ pub struct Cli {
     /// Enable verbose output
     #[arg(short, long, global = true, help = "Enable verbose output")]
     pub verbose: bool,
+
+    /// Machine-readable output format for automation.
+    #[arg(long, global = true, value_enum, default_value = "text")]
+    pub output: OutputFormat,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+pub enum OutputFormat {
+    Text,
+    Jsonl,
 }
 
 /// Available CLI commands
@@ -102,6 +112,65 @@ pub enum Commands {
         reconnect_interval_ms: u64,
     },
 
+    /// Execute a bounded, hash-verified mainline FEL RAM-boot plan.
+    BootMainline {
+        /// Absolute path to the validated JSON plan.
+        #[arg(long)]
+        plan: String,
+
+        /// Stable libusb location in `libusb:BUS:PORT` form.
+        #[arg(long)]
+        device_location: String,
+
+        /// Current USB bus resolved from the saved physical binding.
+        #[arg(long)]
+        bus: u8,
+
+        /// Current USB port resolved from the saved physical binding.
+        #[arg(long)]
+        port: u8,
+    },
+
     /// Launch interactive TUI mode
     Tui,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Cli, Commands, OutputFormat};
+    use clap::Parser;
+
+    #[test]
+    fn parses_scoped_mainline_worker_plan() {
+        let cli = Cli::try_parse_from([
+            "openixcli",
+            "--output",
+            "jsonl",
+            "boot-mainline",
+            "--plan",
+            "/tmp/plan.json",
+            "--device-location",
+            "libusb:3:2",
+            "--bus",
+            "3",
+            "--port",
+            "2",
+        ])
+        .unwrap();
+        assert_eq!(cli.output, OutputFormat::Jsonl);
+        assert!(matches!(
+            cli.command,
+            Some(Commands::BootMainline {
+                bus: 3,
+                port: 2,
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn text_output_remains_default() {
+        let cli = Cli::try_parse_from(["openixcli", "scan"]).unwrap();
+        assert_eq!(cli.output, OutputFormat::Text);
+    }
 }

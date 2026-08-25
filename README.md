@@ -21,6 +21,7 @@ OpenixCLI is a powerful and user-friendly CLI tool designed for flashing firmwar
 - **Progress Tracking**: Visual progress indicators during flash operations
 - **Partition Selection**: Flash specific partitions or entire firmware
 - **Verbose Logging**: Detailed debug output for troubleshooting
+- **Mainline FEL RAM Boot**: Hash-verified R528/T113 SPL, U-Boot and installer loading
 
 ## Installation
 
@@ -40,6 +41,11 @@ cargo build --release
 The compiled binary will be available at `target/release/openixcli`.
 
 ## Usage
+
+The bounded mainline RAM-loader workflow is documented in
+[`docs/mainline-fel-ram-boot.md`](docs/mainline-fel-ram-boot.md). It is separate
+from the vendor FES firmware flashing command and does not claim NAND success
+until the board-side installer provides media verification evidence.
 
 ### Scan for Devices
 
