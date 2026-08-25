@@ -47,6 +47,9 @@ The bounded mainline RAM-loader workflow is documented in
 from the vendor FES firmware flashing command and does not claim NAND success
 until the board-side installer provides media verification evidence.
 
+The named local test gates and their latest results are recorded in
+[`docs/mainline-local-validation-20260825.md`](docs/mainline-local-validation-20260825.md).
+
 ### Scan for Devices
 
 List all connected Allwinner devices:
