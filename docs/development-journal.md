@@ -1,0 +1,54 @@
+# Development journal
+
+## Result
+
+On 2026-08-25 the T113S3 Pro completed a real power-cycle boot from SPI-NAND:
+
+```text
+Trying to boot from sunxi SPI
+U-Boot 2026.07 (Aug 25 2026 - 07:00:31 -0400) DshanPi T113S3 Pro
+Verifying Hash Integrity ... sha256+ OK
+Kernel command line: ... ubi.mtd=sys root=ubi0:rootfs ...
+ubi0: attached mtd4 (name "sys", size 242 MiB)
+VFS: Mounted root (ubifs filesystem)
+DshanPi T113S3 Pro - mainline Buildroot
+t113s3pro-mainline login:
+```
+
+Final installer task: `mainline-1787655837814079629`, status `success`, phase
+`complete`, progress 100%, exit code 0.
+
+The repository was subsequently reconstructed from a clean clone and rebuilt.
+That rebuild passes all local gates but has different reproducible inputs such
+as build timestamps and UBI image metadata, so its exact artifacts remain
+hardware cold-boot revalidation pending. See
+[`verification-status.md`](verification-status.md) for the separation between
+the hardware-proven baseline and the current clean build.
+
+## Failure sequence and fixes
+
+1. **FEL USB unavailable in the VM.** OpenixCLI failed with USB initialization
+   errors until `1f3a:efe8` was explicitly attached to the guest.
+2. **SPL return failed.** R528 SRAM overlap and BootROM clock state required an
+   audited SRAM swap/return thunk, preserved PLL state and bounded reopen logic.
+3. **Wrong boot source.** Cold boot stopped at `Unknown boot source 4`; value 4
+   was added as R528 SPI-NAND.
+4. **Environment reset.** U-Boot repeatedly reset while loading an unavailable
+   environment. The board now uses `ENV_IS_NOWHERE`.
+5. **Conflicting layouts.** Older trees used 3 MiB U-Boot and started boot at
+   4 MiB. All components were aligned to the final 1/4/1/8/242 MiB layout.
+6. **Quad read failure.** U-Boot proper read physical NAND as all `0xff` while
+   SPL and Linux could read it. Removing forced quad width from the U-Boot-only
+   DTS restored valid eGON and FIT magic reads.
+7. **Wrong UBI parameter.** `ubi.mtd=rootfs` referred to a volume name rather
+   than the MTD partition. Changing it to `ubi.mtd=sys` allowed UBIFS root mount.
+8. **Manual boot was not accepted.** A temporary U-Boot `setenv` proved the
+   rootfs, but the result was accepted only after rebuilding, reflashing and
+   cold-booting with the permanent argument.
+
+## Evidence policy
+
+All T113/project-3 task rows were exported before cleanup. The public JSONL is
+path-sanitized. The unredacted SQLite database, complete local worktrees,
+remote build tree and every artifact iteration are retained in the private
+pre-clean archive described by its local `README.md` and `SHA256SUMS`.

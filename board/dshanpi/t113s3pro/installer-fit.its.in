@@ -1,0 +1,52 @@
+/dts-v1/;
+
+/ {
+	description = "DshanPi T113S3 Pro direct-FEL mainline installer";
+	#address-cells = <1>;
+
+	images {
+		kernel {
+			description = "Linux 6.18.8 installer kernel";
+			data = /incbin/("@KERNEL@");
+			type = "kernel";
+			arch = "arm";
+			os = "linux";
+			compression = "none";
+			load = <0x41000000>;
+			entry = <0x41000000>;
+			hash-1 { algo = "sha256"; };
+		};
+
+		fdt {
+			description = "DshanPi T113S3 Pro device tree";
+			data = /incbin/("@DTB@");
+			type = "flat_dt";
+			arch = "arm";
+			compression = "none";
+			load = <0x41800000>;
+			hash-1 { algo = "sha256"; };
+		};
+
+		ramdisk {
+			description = "Self-contained SPI-NAND installer";
+			data = /incbin/("@RAMDISK@");
+			type = "ramdisk";
+			arch = "arm";
+			os = "linux";
+			compression = "none";
+			load = <0x41c00000>;
+			hash-1 { algo = "sha256"; };
+		};
+	};
+
+	configurations {
+		default = "conf";
+		conf {
+			description = "Direct-FEL mainline NAND installer";
+			kernel = "kernel";
+			fdt = "fdt";
+			ramdisk = "ramdisk";
+		};
+	};
+};
+

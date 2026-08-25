@@ -1,0 +1,4 @@
+/buildroot/
+/out/
+__pycache__/
+*.py[cod]

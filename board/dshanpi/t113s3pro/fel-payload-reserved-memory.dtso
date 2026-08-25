@@ -1,0 +1,30 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target-path = "/";
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			reserved-memory {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+
+				fel-payload@44800000 {
+					reg = <0x44800000 0x01800000>;
+				};
+			};
+		};
+	};
+
+	fragment@1 {
+		target-path = "/soc/spi@4025000/flash@0";
+		__overlay__ {
+			dshanpi,legacy-ee-bbm;
+		};
+	};
+};
+
