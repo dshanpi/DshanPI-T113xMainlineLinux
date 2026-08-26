@@ -158,6 +158,19 @@ def verify_log_json() -> None:
             raise AssertionError(f"invalid JSON on row {number}: {error}") from error
 
 
+def verify_revalidation_json() -> None:
+    rows = (ROOT / "logs/hardware-revalidation-20260825.jsonl").read_text().splitlines()
+    require(len(rows) == 5, f"expected 5 revalidation rows, got {len(rows)}")
+    parsed = [json.loads(row) for row in rows]
+    require(parsed[0]["taskId"] == "mainline-1787708569776828829", "operator failure missing")
+    require(parsed[1]["taskId"] == "mainline-1787708850567538011", "clean-build failure missing")
+    require(parsed[2]["taskId"] == "mainline-1787709324680503509", "verified success missing")
+    require(parsed[2]["status"] == "success" and parsed[2]["progressPct"] == 100.0,
+            "verified task is not terminal success")
+    require([row["action"] for row in parsed[3:]] == ["power_off", "power_on"],
+            "cold power cycle is incomplete")
+
+
 def main() -> int:
     lock = source_lock()
     checks = [
@@ -223,17 +236,23 @@ def main() -> int:
     check(f"T{next_id:03d}", "SPI-NAND fixed partition layout is present", lambda: require(all(name in dts for name in ('label = "spl"', 'label = "uboot"', 'label = "secure-storage"', 'label = "boot"', 'label = "sys"')), "partition layout incomplete")); next_id += 1
     check(f"T{next_id:03d}", "Linux config enables SPI-NAND, UBI and UBIFS", lambda: require(all(item in (ROOT / "board/dshanpi/t113s3pro/linux.fragment").read_text() for item in ("CONFIG_MTD_SPI_NAND=y", "CONFIG_MTD_UBI=y", "CONFIG_UBIFS_FS=y")), "Linux NAND/UBI options missing")); next_id += 1
     check(f"T{next_id:03d}", "task history contains exactly 232 valid JSON rows", verify_log_json); next_id += 1
+    check(f"T{next_id:03d}", "latest hardware revalidation JSONL is complete", verify_revalidation_json); next_id += 1
     cold_log = (ROOT / "logs/final-cold-boot.log").read_text(errors="replace")
     markers = ["Trying to boot from sunxi SPI", "U-Boot 2026.07", "ubi0: attached mtd4", "VFS: Mounted root (ubifs filesystem)", "t113s3pro-mainline login:"]
     for marker in markers:
         check(f"T{next_id:03d}", f"historical cold-boot marker: {marker}", lambda marker=marker: require(marker in cold_log, "marker absent")); next_id += 1
     task_log = (ROOT / "logs/t113-task-history-20260824-25.jsonl").read_text()
     check(f"T{next_id:03d}", "history retains successful installer task ID", lambda: require("mainline-1787655837814079629" in task_log, "success task absent")); next_id += 1
+    latest_cold_log = (ROOT / "logs/hardware-revalidation-cold-boot-20260825.log").read_text(errors="replace")
+    check(f"T{next_id:03d}", "latest power-cycle reaches UBIFS login", lambda: require(
+        "VFS: Mounted root (ubifs filesystem)" in latest_cold_log
+        and "t113s3pro-mainline login:" in latest_cold_log,
+        "latest cold-boot markers absent")); next_id += 1
     check(f"T{next_id:03d}", "published logs contain no local workspace path", lambda: require("/home/" not in task_log + cold_log, "unsanitized workspace path")); next_id += 1
     check(f"T{next_id:03d}", "hardware and clean-build manifests remain distinct", lambda: require((ROOT / "manifests/verified-hardware-artifacts.sha256").read_text() != (ROOT / "manifests/clean-build-20260825.sha256").read_text(), "manifests unexpectedly identical")); next_id += 1
     check(f"T{next_id:03d}", "no Python bytecode is tracked", lambda: require(not command("git", "ls-files").strip().endswith(".pyc") and not any(line.endswith(".pyc") for line in command("git", "ls-files").splitlines()), "tracked bytecode")); next_id += 1
 
-    print(f"SUMMARY pass={passed} fail={failed} hardware_current_build=pending")
+    print(f"SUMMARY pass={passed} fail={failed} hardware_current_build=failed-do-not-use")
     return 1 if failed else 0
 
 

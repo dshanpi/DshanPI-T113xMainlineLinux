@@ -19,11 +19,23 @@ Final installer task: `mainline-1787655837814079629`, status `success`, phase
 `complete`, progress 100%, exit code 0.
 
 The repository was subsequently reconstructed from a clean clone and rebuilt.
-That rebuild passes all local gates but has different reproducible inputs such
-as build timestamps and UBI image metadata, so its exact artifacts remain
-hardware cold-boot revalidation pending. See
+That rebuild passes all local gates but has different artifacts. Hardware task
+`mainline-1787708850567538011` proved that this distinction is material: it
+reached the 50% RAM-installer handoff but timed out without the first installer
+marker. Those hashes are now `failed-do-not-use`, not merely pending. See
 [`verification-status.md`](verification-status.md) for the separation between
 the hardware-proven baseline and the current clean build.
+
+The preserved hardware-proven bundle was then selected by exact SHA-256.
+Task `mainline-1787709324680503509` completed the NAND installer at 100% with
+exit code 0. A two-second Lynx Power cycle on device 5/channel 6 cold-booted
+the board through SPI-NAND, mounted UBIFS and reached the login prompt again.
+
+An earlier task, `mainline-1787708569776828829`, failed because a diagnostic
+client closed Lynx's shared `/dev/ttyACM0` handle while the installer monitor
+was active. That failure is classified as an operator/tooling error and is not
+evidence against either artifact set. The gateway must observe task state
+without opening or closing the UI-owned serial session.
 
 ## Failure sequence and fixes
 
@@ -45,6 +57,10 @@ the hardware-proven baseline and the current clean build.
 8. **Manual boot was not accepted.** A temporary U-Boot `setenv` proved the
    rootfs, but the result was accepted only after rebuilding, reflashing and
    cold-booting with the permanent argument.
+9. **Local gates were mistaken for hardware readiness.** The reconstructed
+   source produced internally consistent files but its installer never
+   started on the board. Artifact status is now an explicit four-way label:
+   `verified`, `experimental`, `failed-do-not-use`, or `recovery-only`.
 
 ## Evidence policy
 

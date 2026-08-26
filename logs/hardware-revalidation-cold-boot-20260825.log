@@ -1,0 +1,16 @@
+# Sanitized UART acceptance excerpt observed in the existing Lynx serial terminal
+# after a two-second relay power cycle on device 5/channel 6.
+
+[    3.451858] VFS: Mounted root (ubifs filesystem) on device 0:15.
+[    3.464345] Freeing unused kernel image (initmem) memory: 1024K
+[    3.470510] Run /sbin/init as init process
+Saving 256 bits of creditable seed for next boot
+Starting syslogd: OK
+Starting klogd: OK
+Running sysctl: OK
+Starting udevd: OK
+Starting network: OK
+Starting crond: OK
+
+DshanPi T113S3 Pro - mainline Buildroot
+t113s3pro-mainline login:

@@ -37,6 +37,15 @@ be generalized into a claim of production NAND provisioning: BootROM/SPL boot
 redundancy, OOB/ECC compatibility and bad-block behavior require separate
 qualification for each NAND device and manufacturing process.
 
+The exact preserved bundle named in
+[`manifests/verified-hardware-artifacts.sha256`](manifests/verified-hardware-artifacts.sha256)
+has passed this complete gate twice. The later clean repository rebuild is
+internally valid but failed to start its RAM installer on hardware and is
+explicitly `failed-do-not-use`. See
+[`docs/verification-status.md`](docs/verification-status.md) before selecting
+any artifact. Source reproducibility recovery is still in progress; this
+feature branch is a development/evidence backup, not a manufacturing release.
+
 ## Build
 
 Ubuntu/Debian host prerequisites include Git, Make, GCC, Python 3, `cpio`,

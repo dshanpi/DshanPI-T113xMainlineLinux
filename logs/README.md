@@ -20,4 +20,14 @@ The public repository intentionally excludes the raw Lynx SQLite database
 because it may contain unrelated board and host metadata.
 
 `local-validation-20260825.txt` records every non-hardware gate from the clean
-repository rebuild. Re-run the same gates with `make validate`.
+repository rebuild. Re-run the same gates with `make validate`. Those gates do
+not override the later hardware failure of the clean-build hashes.
+
+`hardware-revalidation-20260825.jsonl` records only device 5's three new
+installer outcomes and the final relay power cycle. It contains no host paths,
+unrelated devices, user data or controller serial number.
+
+`hardware-revalidation-cold-boot-20260825.log` contains the UART markers
+observed after the final two-second power cycle. Together they prove the
+preserved hardware baseline again; they do not rehabilitate the failed clean
+rebuild.
