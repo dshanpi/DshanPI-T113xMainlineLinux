@@ -36,3 +36,8 @@ rebuild.
 hashes, closed-manifest preflight, JSONL failure-path gate, and 75 local source
 checks. It explicitly records `hardwareStatus=pending`; it is not cold-boot
 evidence.
+
+`fes-hardware-validation-20260826.jsonl` records each destructive-route attempt.
+The first attempt stopped before erase because FES identified SPI-NAND but the
+host queried capacity before selecting storage type 5. Later rows must retain
+this failure rather than replacing it.

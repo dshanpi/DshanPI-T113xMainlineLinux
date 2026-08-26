@@ -123,3 +123,11 @@ present for the final destructive gate, so the new layout remains
 `experimental-pending-cold-boot`. It must not inherit the older RAM-installer
 hardware status. The exact host evidence is recorded in
 `logs/fes-host-validation-20260826.jsonl`.
+
+The first hardware execution reached FES and correctly identified SPI-NAND,
+then stopped before erase because the capacity query returned zero. libefex's
+own FES test established the missing sequence: select the detected storage type
+with `flash_set_off`, then probe capacity. The partition path had also used a
+hard-coded storage type zero instead of SPI-NAND type five. Both transitions
+were corrected in OpenixCLI. Per the no-retry rule, the same FES session was
+not reused; a new manual FEL entry is required for the next attempt.
