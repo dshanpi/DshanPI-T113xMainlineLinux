@@ -42,6 +42,7 @@ impl<'a> PartitionDownload<'a> {
         download_list: &[PartitionDownloadInfo],
         verify: bool,
         strict: bool,
+        storage_type: u32,
     ) -> FlashResult<()> {
         if download_list.is_empty() {
             self.logger.warn("No partitions to download");
@@ -54,7 +55,7 @@ impl<'a> PartitionDownload<'a> {
             .info(&format!("Flashing {} partitions...", download_list.len()));
 
         self.logger.info("Turning on flash access...");
-        ctx.fes_flash_set_onoff(0, true)
+        ctx.fes_flash_set_onoff(storage_type, true)
             .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
 
         self.written_bytes.store(0, Ordering::SeqCst);
@@ -71,7 +72,7 @@ impl<'a> PartitionDownload<'a> {
         }
 
         self.logger.info("Turning off flash access...");
-        if let Err(e) = ctx.fes_flash_set_onoff(0, false) {
+        if let Err(e) = ctx.fes_flash_set_onoff(storage_type, false) {
             if strict {
                 return Err(FlashError::UsbTransferError(e.to_string()));
             }

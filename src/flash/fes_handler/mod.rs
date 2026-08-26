@@ -72,6 +72,10 @@ impl<'a> FesHandler<'a> {
             StorageType::from(storage_type)
         ));
 
+        // FES reports a valid media size only after flash access is selected
+        // with the detected storage type and placed in the off/query state.
+        ctx.fes_flash_set_onoff(storage_type, false)
+            .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
         let flash_size = ctx
             .fes_probe_flash_size()
             .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
@@ -194,6 +198,7 @@ impl<'a> FesHandler<'a> {
                         &download_list,
                         options.verify,
                         options.nand_constraints.is_some(),
+                        storage_type,
                     )
                     .await?;
             }
