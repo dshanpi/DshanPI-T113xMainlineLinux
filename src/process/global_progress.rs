@@ -65,6 +65,22 @@ pub enum StageType {
 }
 
 impl StageType {
+    /// Stable machine-readable identifier used by JSONL consumers.
+    pub fn key(&self) -> &'static str {
+        match self {
+            StageType::Init => "init",
+            StageType::FelDram => "fel_dram",
+            StageType::FelUboot => "fel_uboot",
+            StageType::FelReconnect => "fel_reconnect",
+            StageType::FesQuery => "fes_query",
+            StageType::FesErase => "fes_erase",
+            StageType::FesMbr => "fes_mbr",
+            StageType::FesPartitions => "fes_partitions",
+            StageType::FesBoot => "fes_boot",
+            StageType::FesMode => "fes_mode",
+        }
+    }
+
     /// Get human-readable name for the stage
     pub fn name(&self) -> &'static str {
         match self {

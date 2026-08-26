@@ -29,6 +29,22 @@ pub struct FlashArgs {
     pub verbose: bool,
 }
 
+/// Arguments for the explicit FEL -> FES NAND component provisioning route.
+pub struct NandComponentArgs {
+    pub manifest_path: PathBuf,
+    pub device_location: String,
+    pub bus: u8,
+    pub port: u8,
+    pub mode: FlashMode,
+    pub verify: bool,
+    pub post_action: String,
+    pub reconnect_timeout_sec: u64,
+    pub reconnect_interval_ms: u64,
+    pub preflight_only: bool,
+    pub verbose: bool,
+    pub jsonl: bool,
+}
+
 /// Flash mode options
 ///
 /// # Variants

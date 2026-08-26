@@ -202,19 +202,17 @@ impl<'a> SparseDownloader<'a> {
             if verify_resp.flag == EFEX_CRC32_VALID_FLAG {
                 let device_crc = verify_resp.media_crc as u32;
                 if local_checksum != device_crc {
-                    self.logger.warn(&format!(
-                        "Partition {} checksum mismatch: local=0x{:08x}, device=0x{:08x}",
-                        partition_name, local_checksum, device_crc
-                    ));
+                    return Err(FlashError::PartitionDownloadFailed(format!(
+                        "PARTITION_VERIFY_MISMATCH:name={partition_name}:local=0x{local_checksum:08x}:device=0x{device_crc:08x}"
+                    )));
                 } else {
                     self.logger
                         .info(&format!("Partition {} verification passed", partition_name));
                 }
             } else {
-                self.logger.warn(&format!(
-                    "Partition {} verification failed: invalid CRC flag",
-                    partition_name
-                ));
+                return Err(FlashError::PartitionDownloadFailed(format!(
+                    "PARTITION_VERIFY_STATUS_INVALID:name={partition_name}"
+                )));
             }
         }
 

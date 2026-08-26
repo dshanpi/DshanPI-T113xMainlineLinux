@@ -17,6 +17,15 @@ pub struct BootDownload<'a> {
     logger: &'a Logger,
 }
 
+fn validate_boot_verify_status(flag: u32, media_crc: i32, name: &str) -> FlashResult<()> {
+    if flag != EFEX_CRC32_VALID_FLAG || media_crc != 0 {
+        return Err(FlashError::PartitionDownloadFailed(format!(
+            "BOOT_COMPONENT_VERIFY_STATUS_INVALID:name={name}:flag=0x{flag:04x}:media_crc=0x{media_crc:08x}"
+        )));
+    }
+    Ok(())
+}
+
 impl<'a> BootDownload<'a> {
     /// Create a new boot download handler
     pub fn new(logger: &'a Logger) -> Self {
@@ -54,31 +63,36 @@ impl<'a> BootDownload<'a> {
         secure: u32,
         storage_type: u32,
     ) -> FlashResult<()> {
-        if let Some((maintype, subtype)) = self.get_boot1_subtype(secure, storage_type) {
-            self.logger
-                .debug(&format!("Looking for Boot1: {}/{}", maintype, subtype));
-            match packer.get_file_data_by_maintype_subtype(maintype, subtype) {
-                Ok(boot1_data) => {
-                    self.logger.info(&format!(
-                        "Downloading Boot1: {}/{} ({} bytes)",
-                        maintype,
-                        subtype,
-                        boot1_data.len()
-                    ));
-
-                    ctx.fes_down(&boot1_data, 0, FesDataType::Boot1)
-                        .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
-
-                    self.verify_boot(ctx, fes_data_type::BOOT1, "Boot1").await?;
-                }
-                Err(e) => {
-                    self.logger.debug(&format!(
-                        "Boot1 not found: {}/{} - {}",
-                        maintype, subtype, e
-                    ));
-                }
+        let (maintype, subtype) = self
+            .get_boot1_subtype(secure, storage_type)
+            .ok_or(FlashError::Boot1NotFound)?;
+        self.logger
+            .debug(&format!("Looking for Boot1: {maintype}/{subtype}"));
+        let (actual_maintype, actual_subtype, boot1_data) = match packer
+            .get_file_data_by_maintype_subtype(maintype, subtype)
+        {
+            Ok(data) => (maintype, subtype, data),
+            Err(primary_error) => {
+                let fallback_maintype = "12345678";
+                let fallback_subtype = "UBOOT_0000000000";
+                let data = packer
+                        .get_file_data_by_maintype_subtype(fallback_maintype, fallback_subtype)
+                        .map_err(|fallback_error| {
+                            self.logger.debug(&format!(
+                                "Boot1 not found: {maintype}/{subtype} ({primary_error}); fallback {fallback_maintype}/{fallback_subtype} ({fallback_error})"
+                            ));
+                            FlashError::Boot1NotFound
+                        })?;
+                (fallback_maintype, fallback_subtype, data)
             }
-        }
+        };
+        self.logger.info(&format!(
+            "Downloading Boot1: {actual_maintype}/{actual_subtype} ({} bytes)",
+            boot1_data.len()
+        ));
+        ctx.fes_down(&boot1_data, 0, FesDataType::Boot1)
+            .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
+        self.verify_boot(ctx, fes_data_type::BOOT1, "Boot1").await?;
         Ok(())
     }
 
@@ -92,33 +106,30 @@ impl<'a> BootDownload<'a> {
         secure: u32,
         storage_type: u32,
     ) -> FlashResult<()> {
-        if let Some((maintype, subtype)) = self.get_boot0_subtype(secure, storage_type) {
-            self.logger
-                .debug(&format!("Looking for Boot0: {}/{}", maintype, subtype));
-            let boot0_data = packer
-                .get_file_data_by_maintype_subtype(maintype, subtype)
-                .or_else(|_| {
-                    if let Some((m, s)) = self.get_boot0_subtype(secure, 0) {
-                        packer.get_file_data_by_maintype_subtype(m, s)
-                    } else {
-                        Err(PackerError::FileNotFound(subtype.to_string()))
-                    }
-                });
-
-            if let Ok(boot0_data) = boot0_data {
-                self.logger.info(&format!(
-                    "Downloading Boot0: {}/{} ({} bytes)",
-                    maintype,
-                    subtype,
-                    boot0_data.len()
-                ));
-
-                ctx.fes_down(&boot0_data, 0, FesDataType::Boot0)
-                    .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
-
-                self.verify_boot(ctx, fes_data_type::BOOT0, "Boot0").await?;
-            }
-        }
+        let (maintype, subtype) = self
+            .get_boot0_subtype(secure, storage_type)
+            .ok_or(FlashError::Boot0NotFound)?;
+        self.logger
+            .debug(&format!("Looking for Boot0: {maintype}/{subtype}"));
+        let boot0_data = packer
+            .get_file_data_by_maintype_subtype(maintype, subtype)
+            .or_else(|_| {
+                if let Some((fallback_maintype, fallback_subtype)) =
+                    self.get_boot0_subtype(secure, 0)
+                {
+                    packer.get_file_data_by_maintype_subtype(fallback_maintype, fallback_subtype)
+                } else {
+                    Err(PackerError::FileNotFound(subtype.to_string()))
+                }
+            })
+            .map_err(|_| FlashError::Boot0NotFound)?;
+        self.logger.info(&format!(
+            "Downloading Boot0: {maintype}/{subtype} ({} bytes)",
+            boot0_data.len()
+        ));
+        ctx.fes_down(&boot0_data, 0, FesDataType::Boot0)
+            .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
+        self.verify_boot(ctx, fes_data_type::BOOT0, "Boot0").await?;
         Ok(())
     }
 
@@ -133,13 +144,8 @@ impl<'a> BootDownload<'a> {
             .fes_verify_status(data_type)
             .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
 
-        if verify.flag == EFEX_CRC32_VALID_FLAG {
-            self.logger.stage_complete(&format!("{} verified", name));
-        } else {
-            self.logger
-                .warn(&format!("{} verify status: 0x{:04x}", name, verify.flag));
-        }
-
+        validate_boot_verify_status(verify.flag, verify.media_crc, name)?;
+        self.logger.stage_complete(&format!("{} verified", name));
         Ok(())
     }
 
@@ -189,5 +195,20 @@ impl<'a> BootDownload<'a> {
                 _ => Some(("12345678", "TOC0_00000000000")),
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn boot_verification_flag_is_not_advisory() {
+        let error = validate_boot_verify_status(0, 0, "Boot0").unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("BOOT_COMPONENT_VERIFY_STATUS_INVALID:name=Boot0"));
+        validate_boot_verify_status(EFEX_CRC32_VALID_FLAG, 0, "Boot1").unwrap();
+        assert!(validate_boot_verify_status(EFEX_CRC32_VALID_FLAG, 1, "Boot1").is_err());
     }
 }

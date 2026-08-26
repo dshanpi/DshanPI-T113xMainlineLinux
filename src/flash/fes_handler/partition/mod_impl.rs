@@ -41,6 +41,7 @@ impl<'a> PartitionDownload<'a> {
         packer: &mut OpenixPacker,
         download_list: &[PartitionDownloadInfo],
         verify: bool,
+        strict: bool,
     ) -> FlashResult<()> {
         if download_list.is_empty() {
             self.logger.warn("No partitions to download");
@@ -71,6 +72,9 @@ impl<'a> PartitionDownload<'a> {
 
         self.logger.info("Turning off flash access...");
         if let Err(e) = ctx.fes_flash_set_onoff(0, false) {
+            if strict {
+                return Err(FlashError::UsbTransferError(e.to_string()));
+            }
             self.logger
                 .warn(&format!("Failed to turn off flash access: {}", e));
         }

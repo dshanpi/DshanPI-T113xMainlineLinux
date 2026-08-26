@@ -22,6 +22,8 @@ OpenixCLI is a powerful and user-friendly CLI tool designed for flashing firmwar
 - **Partition Selection**: Flash specific partitions or entire firmware
 - **Verbose Logging**: Detailed debug output for troubleshooting
 - **Mainline FEL RAM Boot**: Hash-verified R528/T113 SPL, U-Boot and installer loading
+- **FES NAND Components**: Explicit RAM-only vendor bootstrap followed by
+  hash-pinned Boot0, Boot1 and logical partition provisioning
 - **Machine-readable Scan**: JSONL device identity and stable `libusb:BUS:PORT`
   output for wrappers that reject ambiguous targets
 
@@ -35,7 +37,7 @@ OpenixCLI is a powerful and user-friendly CLI tool designed for flashing firmwar
 ### Build from Source
 
 ```bash
-git clone -b feat/mainline-fel-ram-installer \
+git clone -b feat/fes-nand-components \
   https://github.com/100askTeam/OpenixCLI.git
 cd OpenixCLI
 cargo build --release --locked
@@ -63,6 +65,11 @@ For `boot-mainline`, the terminal OpenixCLI event is only a RAM handoff result:
 `phase=ram_handoff_complete`, `scope=fel_ram_handoff`, and
 `installerStatus=not_observed`. NAND completion must come from the independent
 board UART installer markers; OpenixCLI does not synthesize that result.
+
+The formal NAND component route and its safety contract are documented in
+[`docs/fes-nand-components.md`](docs/fes-nand-components.md). It keeps the
+vendor loader in RAM, writes only manifest-approved mainline components, and
+does not share the experimental mainline RAM installer implementation.
 
 ### Scan for Devices
 

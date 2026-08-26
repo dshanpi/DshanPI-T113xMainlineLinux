@@ -61,6 +61,18 @@ pub struct FlashOptions {
     pub post_action: String,
     pub reconnect_timeout_sec: u64,
     pub reconnect_interval_ms: u64,
+    /// Present only for the explicit NAND component route.
+    pub nand_constraints: Option<NandConstraints>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NandConstraints {
+    pub expected_capacity_bytes: u64,
+    pub expected_partitions: Vec<String>,
+    pub expected_ubifs_partition: Option<String>,
+    pub exact_bus: u8,
+    pub exact_port: u8,
+    pub disable_fes_retry: bool,
 }
 
 /// Main flash controller
@@ -69,6 +81,7 @@ pub struct FlashOptions {
 /// FES handling, and partition flashing
 pub struct Flasher {
     packer: OpenixPacker,
+    ram_only_bootstrap: Option<OpenixPacker>,
     options: FlashOptions,
     logger: Logger,
 }
@@ -78,9 +91,17 @@ impl Flasher {
     pub fn new(packer: OpenixPacker, options: FlashOptions, logger: Logger) -> Self {
         Self {
             packer,
+            ram_only_bootstrap: None,
             options,
             logger,
         }
+    }
+
+    /// Use a separate board-matched IMAGEWTY package only for FEL DRAM/FES
+    /// bootstrap. Persistent components continue to come from `self.packer`.
+    pub fn with_ram_only_bootstrap(mut self, bootstrap: OpenixPacker) -> Self {
+        self.ram_only_bootstrap = Some(bootstrap);
+        self
     }
 
     /// Execute the flash process
@@ -88,7 +109,11 @@ impl Flasher {
     /// This is the main entry point for the flashing process.
     /// It handles both FEL and FES mode devices.
     pub async fn execute(&mut self) -> FlashResult<()> {
-        let fes_data = self.packer.get_fes().map_err(|_| FlashError::FesNotFound)?;
+        let fes_data = match self.ram_only_bootstrap.as_mut() {
+            Some(bootstrap) => bootstrap.get_fes(),
+            None => self.packer.get_fes(),
+        }
+        .map_err(|_| FlashError::FesNotFound)?;
 
         let mut ctx = if let (Some(bus), Some(port)) = (self.options.bus, self.options.port) {
             let mut ctx = libefex::Context::new();
@@ -143,19 +168,19 @@ impl Flasher {
 
             self.logger.begin_stage(StageType::FelUboot);
 
-            let uboot_data = self
-                .packer
-                .get_uboot()
-                .map_err(|_| FlashError::UbootNotFound)?;
-
-            let dtb_data = self.packer.get_dtb().ok();
-
-            let sysconfig_data = self
-                .packer
-                .get_sys_config_bin()
-                .map_err(|_| FlashError::SysConfigNotFound)?;
-
-            let board_config_data = self.packer.get_board_config().ok();
+            let (uboot_data, dtb_data, sysconfig_data, board_config_data) = {
+                let bootstrap = self.ram_only_bootstrap.as_mut().unwrap_or(&mut self.packer);
+                (
+                    bootstrap
+                        .get_uboot()
+                        .map_err(|_| FlashError::UbootNotFound)?,
+                    bootstrap.get_dtb().ok(),
+                    bootstrap
+                        .get_sys_config_bin()
+                        .map_err(|_| FlashError::SysConfigNotFound)?,
+                    bootstrap.get_board_config().ok(),
+                )
+            };
 
             fel_handler
                 .download_uboot(
@@ -179,9 +204,16 @@ impl Flasher {
         }
 
         let mut fes_handler = FesHandler::new(&mut self.logger);
-        let fes_result = fes_handler.handle(&ctx, &mut self.packer, &self.options).await;
+        let fes_result = fes_handler
+            .handle(&ctx, &mut self.packer, &self.options)
+            .await;
         if let Err(first_err) = fes_result {
-            if has_fel && Self::is_retryable_fes_error(&first_err) {
+            let retry_disabled = self
+                .options
+                .nand_constraints
+                .as_ref()
+                .is_some_and(|value| value.disable_fes_retry);
+            if has_fel && !retry_disabled && Self::is_retryable_fes_error(&first_err) {
                 self.logger.warn(&format!(
                     "FES first handshake failed: {}. Reconnecting and retrying once...",
                     first_err
@@ -191,7 +223,9 @@ impl Flasher {
                 self.logger.complete_stage();
 
                 let mut retry_handler = FesHandler::new(&mut self.logger);
-                retry_handler.handle(&ctx, &mut self.packer, &self.options).await?;
+                retry_handler
+                    .handle(&ctx, &mut self.packer, &self.options)
+                    .await?;
             } else {
                 return Err(first_err);
             }
@@ -222,15 +256,18 @@ impl Flasher {
             let devices = match libefex::Context::scan_usb_devices() {
                 Ok(d) => d,
                 Err(_) => {
-                    self.logger.debug(&format!(
-                        "Reconnect attempt {} (scan failed)",
-                        attempts
-                    ));
+                    self.logger
+                        .debug(&format!("Reconnect attempt {} (scan failed)", attempts));
                     continue;
                 }
             };
 
             for dev in devices {
+                if let Some(binding) = &self.options.nand_constraints {
+                    if dev.bus != binding.exact_bus || dev.port != binding.exact_port {
+                        continue;
+                    }
+                }
                 let mut new_ctx = libefex::Context::new();
                 if new_ctx.scan_usb_device_at(dev.bus, dev.port).is_err() {
                     continue;
@@ -253,7 +290,7 @@ impl Flasher {
                 ));
                 if mode == libefex::DeviceMode::Srv {
                     return Ok(new_ctx);
-                } 
+                }
             }
         }
 
@@ -262,6 +299,10 @@ impl Flasher {
 
     /// Set device mode after flashing
     async fn set_device_mode(&self, ctx: &libefex::Context) -> FlashResult<()> {
+        if self.options.post_action == "none" {
+            self.logger.info("Post action: none; leaving device in FES");
+            return Ok(());
+        }
         let tool_mode = match self.options.post_action.as_str() {
             "reboot" => libefex::FesToolMode::Reboot,
             "poweroff" => libefex::FesToolMode::PowerOff,

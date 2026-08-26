@@ -27,7 +27,12 @@ impl<'a> MbrDownload<'a> {
     /// Execute MBR download
     ///
     /// Downloads MBR data to device storage and verifies the write
-    pub async fn execute(&self, ctx: &libefex::Context, mbr_data: &[u8]) -> FlashResult<()> {
+    pub async fn execute(
+        &self,
+        ctx: &libefex::Context,
+        mbr_data: &[u8],
+        strict: bool,
+    ) -> FlashResult<()> {
         self.logger
             .info(&format!("Downloading MBR ({} bytes)...", mbr_data.len()));
 
@@ -38,11 +43,11 @@ impl<'a> MbrDownload<'a> {
         ctx.fes_down(mbr_data, 0, FesDataType::Mbr)
             .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
 
-        self.verify_mbr(ctx).await
+        self.verify_mbr(ctx, strict).await
     }
 
     /// Verify MBR was written correctly
-    async fn verify_mbr(&self, ctx: &libefex::Context) -> FlashResult<()> {
+    async fn verify_mbr(&self, ctx: &libefex::Context, strict: bool) -> FlashResult<()> {
         for _ in 0..MAX_VERIFY_RETRIES {
             tokio::time::sleep(Duration::from_millis(100)).await;
 
@@ -56,6 +61,11 @@ impl<'a> MbrDownload<'a> {
             }
         }
 
+        if strict {
+            return Err(FlashError::InvalidFirmwareFormat(
+                "NAND_MBR_VERIFY_FAILED".into(),
+            ));
+        }
         self.logger
             .warn("MBR verification not confirmed, continuing...");
         Ok(())

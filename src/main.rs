@@ -111,6 +111,57 @@ async fn main() -> anyhow::Result<()> {
                 cli.output == OutputFormat::Jsonl,
             )?;
         }
+        Some(Commands::FlashNandComponents {
+            manifest,
+            device_location,
+            bus,
+            port,
+            mode,
+            verify,
+            post_action,
+            reconnect_timeout_sec,
+            reconnect_interval_ms,
+            preflight_only,
+        }) => {
+            let jsonl = cli.output == OutputFormat::Jsonl;
+            let result = match commands::FlashMode::from_str(&mode) {
+                Ok(mode) => {
+                    commands::nand_components::execute(commands::NandComponentArgs {
+                        manifest_path: manifest.into(),
+                        device_location,
+                        bus,
+                        port,
+                        mode,
+                        verify,
+                        post_action,
+                        reconnect_timeout_sec,
+                        reconnect_interval_ms,
+                        preflight_only,
+                        verbose: cli.verbose,
+                        jsonl,
+                    })
+                    .await
+                }
+                Err(error) => Err(anyhow::anyhow!(error)),
+            };
+            if let Err(error) = result {
+                if jsonl {
+                    let message = error.to_string();
+                    let code = commands::nand_components::error_code(&message);
+                    println!(
+                        "{}",
+                        serde_json::json!({
+                            "event":"error",
+                            "route":"fes_nand_components",
+                            "code":code,
+                            "message":message
+                        })
+                    );
+                    std::process::exit(1);
+                }
+                return Err(error);
+            }
+        }
     }
 
     Ok(())

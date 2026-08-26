@@ -4,7 +4,8 @@
 
 pub mod flash;
 pub mod mainline;
+pub mod nand_components;
 pub mod scan;
 pub mod types;
 
-pub use types::{FlashArgs, FlashMode};
+pub use types::{FlashArgs, FlashMode, NandComponentArgs};

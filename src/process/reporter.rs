@@ -75,6 +75,11 @@ impl ProgressReporter {
     pub fn get_progress(&self) -> u8 {
         self.progress.get_progress()
     }
+
+    /// Return a read-only snapshot for structured progress output.
+    pub fn snapshot(&self) -> super::global_progress::ProgressSnapshot {
+        self.progress.snapshot()
+    }
 }
 
 impl Default for ProgressReporter {

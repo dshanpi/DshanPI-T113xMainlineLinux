@@ -131,6 +131,47 @@ pub enum Commands {
         port: u8,
     },
 
+    /// Provision NAND/SPI-NAND through a board-matched RAM-only FES loader.
+    FlashNandComponents {
+        /// Component manifest. Artifact paths are resolved relative to this file.
+        #[arg(long)]
+        manifest: String,
+
+        /// Stable libusb location in `libusb:BUS:PORT` form.
+        #[arg(long)]
+        device_location: String,
+
+        /// Current USB bus resolved from the saved physical binding.
+        #[arg(long)]
+        bus: u8,
+
+        /// Current USB port resolved from the saved physical binding.
+        #[arg(long)]
+        port: u8,
+
+        /// NAND erase policy. Only partition_erase and full_erase are accepted.
+        #[arg(long, default_value = "full_erase")]
+        mode: String,
+
+        /// Require component verification through FES.
+        #[arg(long, default_value = "true")]
+        verify: bool,
+
+        /// Leave the board in FES by default so cold boot is a separate gate.
+        #[arg(long, default_value = "none")]
+        post_action: String,
+
+        #[arg(long, default_value_t = 90u64)]
+        reconnect_timeout_sec: u64,
+
+        #[arg(long, default_value_t = 500u64)]
+        reconnect_interval_ms: u64,
+
+        /// Validate the package and execution plan without opening USB.
+        #[arg(long)]
+        preflight_only: bool,
+    },
+
     /// Launch interactive TUI mode
     Tui,
 }
@@ -172,5 +213,37 @@ mod tests {
     fn text_output_remains_default() {
         let cli = Cli::try_parse_from(["openixcli", "scan"]).unwrap();
         assert_eq!(cli.output, OutputFormat::Text);
+    }
+
+    #[test]
+    fn parses_explicit_nand_component_route() {
+        let cli = Cli::try_parse_from([
+            "openixcli",
+            "--output",
+            "jsonl",
+            "flash-nand-components",
+            "--manifest",
+            "/tmp/fes/manifest.json",
+            "--device-location",
+            "libusb:3:2",
+            "--bus",
+            "3",
+            "--port",
+            "2",
+            "--mode",
+            "partition_erase",
+            "--post-action",
+            "none",
+        ])
+        .unwrap();
+        assert!(matches!(
+            cli.command,
+            Some(Commands::FlashNandComponents {
+                bus: 3,
+                port: 2,
+                preflight_only: false,
+                ..
+            })
+        ));
     }
 }

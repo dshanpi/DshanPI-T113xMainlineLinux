@@ -79,11 +79,10 @@ impl<'a> RawDownloader<'a> {
             let chunk_data = match chunk_data {
                 Ok(data) => data,
                 Err(e) => {
-                    self.logger.warn(&format!(
+                    return Err(FlashError::InvalidFirmwareFormat(format!(
                         "Failed to read chunk data for {}: {}",
                         info.partition_name, e
-                    ));
-                    break;
+                    )))
                 }
             };
 
@@ -136,19 +135,19 @@ impl<'a> RawDownloader<'a> {
             if verify_resp.flag == EFEX_CRC32_VALID_FLAG {
                 let media_crc = verify_resp.media_crc as u32;
                 if local_checksum != media_crc {
-                    self.logger.warn(&format!(
-                        "Partition {} checksum mismatch: local=0x{:x}, device=0x{:x}",
+                    return Err(FlashError::PartitionDownloadFailed(format!(
+                        "PARTITION_VERIFY_MISMATCH:name={}:local=0x{:x}:device=0x{:x}",
                         info.partition_name, local_checksum, media_crc
-                    ));
+                    )));
                 } else {
                     self.logger
                         .stage_complete(&format!("Partition {} verified", info.partition_name));
                 }
             } else {
-                self.logger.warn(&format!(
-                    "Partition {} verification failed",
+                return Err(FlashError::PartitionDownloadFailed(format!(
+                    "PARTITION_VERIFY_STATUS_INVALID:name={}",
                     info.partition_name
-                ));
+                )));
             }
         } else {
             self.logger

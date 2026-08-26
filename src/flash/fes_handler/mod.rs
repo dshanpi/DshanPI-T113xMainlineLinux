@@ -16,7 +16,7 @@ pub use erase_flag::EraseFlag;
 pub use mbr_download::MbrDownload;
 pub use partition::PartitionDownload;
 pub use types::PartitionDownloadInfo;
-pub use ubifs_config::UbifsConfig;
+pub use ubifs_config::{UbifsConfig, UbifsConfigResult};
 
 use crate::config::boot_header::get_sunxi_boot_file_mode_string;
 use crate::config::mbr_parser::SunxiMbr;
@@ -24,6 +24,7 @@ use crate::firmware::{OpenixPacker, StorageType};
 use crate::flash::FlashMode;
 use crate::process::StageType;
 use crate::utils::{FlashError, FlashResult, Logger};
+use std::collections::HashSet;
 
 /// FES handler for devices in U-Boot mode
 ///
@@ -79,12 +80,39 @@ impl<'a> FesHandler<'a> {
             (flash_size as u64) * 512 / 1024 / 1024
         ));
 
+        if let Some(constraints) = &options.nand_constraints {
+            let detected = StorageType::from(storage_type);
+            if !matches!(detected, StorageType::Nand | StorageType::Spinand) {
+                return Err(FlashError::InvalidFirmwareFormat(
+                    "NAND_STORAGE_PREFLIGHT_REJECTED:target is not NAND/SPI-NAND".into(),
+                ));
+            }
+            let detected_bytes = flash_size as u64 * 512;
+            if detected_bytes != constraints.expected_capacity_bytes {
+                return Err(FlashError::InvalidFirmwareFormat(format!(
+                    "NAND_CAPACITY_MISMATCH:expected={}:detected={detected_bytes}",
+                    constraints.expected_capacity_bytes
+                )));
+            }
+            if !matches!(
+                options.mode,
+                FlashMode::PartitionErase | FlashMode::FullErase
+            ) {
+                return Err(FlashError::InvalidFirmwareFormat(
+                    "NAND_ERASE_POLICY_REQUIRED:partition_erase_or_full_erase".into(),
+                ));
+            }
+            self.logger.info("NAND_STORAGE_PREFLIGHT:passed");
+        }
+
         self.logger.complete_stage();
 
         if options.mode != FlashMode::Partition {
             self.logger.begin_stage(StageType::FesErase);
             let erase_flag = EraseFlag::new(&*self.logger);
-            erase_flag.execute(ctx, options.mode).await?;
+            erase_flag
+                .execute(ctx, options.mode, options.nand_constraints.is_some())
+                .await?;
             self.logger.complete_stage();
         }
 
@@ -100,16 +128,54 @@ impl<'a> FesHandler<'a> {
 
         let download_list = self.prepare_partition_download_list(packer, &mbr_info, options)?;
 
+        if let Some(constraints) = &options.nand_constraints {
+            let expected: HashSet<&str> = constraints
+                .expected_partitions
+                .iter()
+                .map(String::as_str)
+                .collect();
+            let actual: HashSet<&str> = download_list
+                .iter()
+                .map(|partition| partition.partition_name.as_str())
+                .collect();
+            if expected != actual || actual.len() != download_list.len() {
+                return Err(FlashError::InvalidFirmwareFormat(format!(
+                    "NAND_COMPONENT_DOWNLOAD_SET_MISMATCH:expected={:?}:actual={:?}",
+                    constraints.expected_partitions,
+                    download_list
+                        .iter()
+                        .map(|partition| partition.partition_name.as_str())
+                        .collect::<Vec<_>>()
+                )));
+            }
+            self.logger.info("NAND_COMPONENT_DOWNLOAD_SET:passed");
+        }
+
         let ubifs_config = UbifsConfig::new(&*self.logger);
-        ubifs_config.execute(
+        let ubifs_result = ubifs_config.execute(
             ctx,
             &mut *packer,
             &download_list,
             StorageType::from(storage_type),
         )?;
+        if let Some(constraints) = &options.nand_constraints {
+            match (&constraints.expected_ubifs_partition, ubifs_result) {
+                (Some(expected), UbifsConfigResult::Configured { partition_name })
+                    if expected == &partition_name => {}
+                (None, UbifsConfigResult::Skipped | UbifsConfigResult::NotFound) => {}
+                (expected, actual) => {
+                    return Err(FlashError::InvalidFirmwareFormat(format!(
+                        "NAND_UBIFS_CONFIG_MISMATCH:expected={expected:?}:actual={actual:?}"
+                    )))
+                }
+            }
+            self.logger.info("NAND_UBIFS_CONFIG:passed");
+        }
 
         let mbr_download = MbrDownload::new(&*self.logger);
-        mbr_download.execute(ctx, &mbr_data).await?;
+        mbr_download
+            .execute(ctx, &mbr_data, options.nand_constraints.is_some())
+            .await?;
 
         self.logger.complete_stage();
 
@@ -122,12 +188,19 @@ impl<'a> FesHandler<'a> {
             {
                 let mut partition_download = PartitionDownload::new(&mut *self.logger);
                 partition_download
-                    .execute(ctx, packer, &download_list, options.verify)
+                    .execute(
+                        ctx,
+                        packer,
+                        &download_list,
+                        options.verify,
+                        options.nand_constraints.is_some(),
+                    )
                     .await?;
             }
 
             self.logger.complete_stage();
 
+            self.logger.set_current_partition("");
             self.logger.begin_stage(StageType::FesBoot);
             let boot_download = BootDownload::new(&*self.logger);
             boot_download

@@ -26,7 +26,12 @@ impl<'a> EraseFlag<'a> {
     /// Execute erase flag download
     ///
     /// Downloads the appropriate erase flag to the device based on flash mode
-    pub async fn execute(&self, ctx: &libefex::Context, mode: FlashMode) -> FlashResult<()> {
+    pub async fn execute(
+        &self,
+        ctx: &libefex::Context,
+        mode: FlashMode,
+        strict: bool,
+    ) -> FlashResult<()> {
         self.logger.info("Downloading erase flag...");
 
         let mut erase_data = vec![0u8; 16];
@@ -36,14 +41,14 @@ impl<'a> EraseFlag<'a> {
         ctx.fes_down(&erase_data, 0, FesDataType::Erase)
             .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
 
-        self.verify_erase_flag(ctx).await?;
+        self.verify_erase_flag(ctx, strict).await?;
 
         self.logger.stage_complete("Erase flag downloaded");
         Ok(())
     }
 
     /// Verify erase flag with retries
-    async fn verify_erase_flag(&self, ctx: &libefex::Context) -> FlashResult<()> {
+    async fn verify_erase_flag(&self, ctx: &libefex::Context, strict: bool) -> FlashResult<()> {
         let mut verify_success = false;
 
         for i in 0..MAX_VERIFY_RETRIES {
@@ -78,6 +83,11 @@ impl<'a> EraseFlag<'a> {
         }
 
         if !verify_success {
+            if strict {
+                return Err(FlashError::InvalidFirmwareFormat(
+                    "NAND_ERASE_VERIFY_FAILED".into(),
+                ));
+            }
             self.logger
                 .warn("Erase flag verification not confirmed, continuing...");
         }

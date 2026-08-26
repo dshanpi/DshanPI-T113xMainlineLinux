@@ -63,6 +63,7 @@ pub async fn execute(args: FlashArgs) -> anyhow::Result<()> {
         post_action: args.post_action,
         reconnect_timeout_sec: args.reconnect_timeout_sec,
         reconnect_interval_ms: args.reconnect_interval_ms,
+        nand_constraints: None,
     };
 
     let mut flasher = Flasher::new(packer, options, logger.clone());
