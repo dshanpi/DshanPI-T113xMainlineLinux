@@ -177,7 +177,9 @@ impl<'a> BootDownload<'a> {
     ) -> Option<(&'static str, &'static str)> {
         if secure == BOOT_FILE_MODE_NORMAL || secure == BOOT_FILE_MODE_PKG {
             match StorageType::from(storage_type) {
-                StorageType::Nand | StorageType::Spinand => Some(("BOOT    ", "BOOT0_0000000000")),
+                // OpenixPacker normalizes fixed-width IMAGEWTY maintypes by
+                // trimming trailing NULs and spaces.
+                StorageType::Nand | StorageType::Spinand => Some(("BOOT", "BOOT0_0000000000")),
                 StorageType::Sdcard
                 | StorageType::Emmc
                 | StorageType::Emmc3
@@ -210,5 +212,15 @@ mod tests {
             .contains("BOOT_COMPONENT_VERIFY_STATUS_INVALID:name=Boot0"));
         validate_boot_verify_status(EFEX_CRC32_VALID_FLAG, 0, "Boot1").unwrap();
         assert!(validate_boot_verify_status(EFEX_CRC32_VALID_FLAG, 1, "Boot1").is_err());
+    }
+
+    #[test]
+    fn spinand_boot0_lookup_uses_normalized_imagewty_maintype() {
+        let logger = Logger::new();
+        let downloader = BootDownload::new(&logger);
+        assert_eq!(
+            downloader.get_boot0_subtype(BOOT_FILE_MODE_PKG, 5),
+            Some(("BOOT", "BOOT0_0000000000"))
+        );
     }
 }
