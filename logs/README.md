@@ -57,3 +57,7 @@ transition, then reproduced Boot1 rejection. Source/binary comparison proved
 the RAM-only loader embedded a stale FES U-Boot lacking the mainline component
 acceptance patch. The log pins the stale, replacement, and patched-loader
 hashes; v5 adds an embedded capability-marker gate.
+The sixth attempt proves that v5 writes and verifies mainline Boot1. It stopped
+before Boot0 transfer because the host used a space-padded maintype after its
+own IMAGEWTY parser had normalized that field. The exact Boot0 entry and lookup
+fix are recorded without claiming Boot0 or cold-boot success.

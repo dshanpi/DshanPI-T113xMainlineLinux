@@ -175,3 +175,10 @@ Bundle v5 pins patched loader SHA-256
 Both bundle generation and OpenixCLI now require the embedded capability
 markers `mainline u-boot size` and `mainline eGON SPL size`. The old v4 manifest
 is rejected before USB with `NAND_BOOTSTRAP_CAPABILITY_MARKERS_REQUIRED`.
+
+The sixth manual-FEL attempt used v5. It again verified MBR, `boot`, and
+`rootfs`; most importantly, the patched FES loader accepted and verified the
+mainline Boot1. Boot0 was not sent because the host could not find it. The
+container entry is `BOOT/BOOT0_0000000000`, while the lookup used `BOOT` padded
+with four spaces even though `OpenixPacker` normalizes fixed-width maintypes.
+The mapping now uses normalized `BOOT` and has a storage-type-five unit test.
