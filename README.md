@@ -55,6 +55,9 @@ until the board-side installer provides media verification evidence.
 
 The named local test gates and their latest results are recorded in
 [`docs/mainline-local-validation-20260825.md`](docs/mainline-local-validation-20260825.md).
+That report also identifies the companion T113 source commit, artifact manifest,
+and retained evidence for the completed installer plus two cold-boot hardware
+qualification cycles.
 
 For `boot-mainline`, the terminal OpenixCLI event is only a RAM handoff result:
 `phase=ram_handoff_complete`, `scope=fel_ram_handoff`, and

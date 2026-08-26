@@ -70,9 +70,23 @@ Run all executable gates with:
 ./scripts/validate-mainline.sh
 ```
 
-## Hardware boundary
+## Hardware qualification
 
-These gates validate parsing, bounds, hashing, endpoint selection, SRAM thunk
-construction and build quality without a connected board. The current clean
-T113 artifact set still requires a new physical FEL load, NAND readback and
-power-cycle boot. No automatic retry is allowed after a terminal FEL failure.
+These executable gates validate parsing, bounds, hashing, endpoint selection,
+SRAM thunk construction and build quality without requiring a connected board.
+The companion T113 repository's source-recovery build was subsequently tested
+with this exact OpenixCLI commit (`f10ff48cf938d5a85e45e2a78f241f6602baff06`).
+Lynx task `mainline-1787715829104265529` completed the board-side installer at
+100% with exit code 0. The board then mounted `sys/rootfs` and reached
+`t113s3pro-mainline login:` after the installer reboot and after two controlled
+power-off cold boots.
+
+The sanitized task, power-cycle and UART-marker evidence is preserved in the
+companion branch at
+`logs/source-rebuild-hardware-validation-20260825.jsonl`; the exact artifact
+hashes are in
+`manifests/hardware-verified-source-rebuild-20260825.sha256`. This qualifies the
+tested DshanPi T113S3 Pro and Winbond W25N02KV development/recovery workflow. It
+does not establish a general manufacturing guarantee for other NAND devices or
+bad-block populations. No automatic retry is allowed after a terminal FEL
+failure.
