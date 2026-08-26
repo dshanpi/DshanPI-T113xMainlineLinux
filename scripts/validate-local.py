@@ -213,8 +213,12 @@ def main() -> int:
     check(f"T{next_id:03d}", "packaged SPL passes independent eGON checks", verify_egon); next_id += 1
     check(f"T{next_id:03d}", "U-Boot environment is nowhere", lambda: require("CONFIG_ENV_IS_NOWHERE=y" in (UBOOT / ".config").read_text(), "ENV_IS_NOWHERE missing")); next_id += 1
     check(f"T{next_id:03d}", "U-Boot FAT/SPI environment backends are disabled", lambda: require(not re.search(r"CONFIG_ENV_IS_IN_(FAT|SPI_FLASH)=y", (UBOOT / ".config").read_text()), "forbidden environment backend")); next_id += 1
+    check(f"T{next_id:03d}", "U-Boot console index selects UART3", lambda: require(
+        "CONFIG_CONS_INDEX=4" in (UBOOT / ".config").read_text()
+        and "@@ -0,0 +1,16 @@" in (ROOT / "board/dshanpi/t113s3pro/patches/uboot/0002-sunxi-add-dshanpi-t113s3pro-spinand-target.patch").read_text(),
+        "UART3 console index missing from built config or permanent patch")); next_id += 1
     check(f"T{next_id:03d}", "FEL artifact checksums verify", lambda: verify_checksum_file(ARTIFACTS / "FEL_SHA256SUMS", ARTIFACTS)); next_id += 1
-    check(f"T{next_id:03d}", "clean-build manifest checksums verify", lambda: verify_checksum_file(ROOT / "manifests/clean-build-20260825.sha256", ARTIFACTS)); next_id += 1
+    check(f"T{next_id:03d}", "source-recovery candidate checksums verify", lambda: verify_checksum_file(ROOT / "manifests/source-recovery-candidate-20260825.sha256", ARTIFACTS)); next_id += 1
     check(f"T{next_id:03d}", "payload archive membership and internal hashes verify", verify_payload); next_id += 1
     check(f"T{next_id:03d}", "eight redundant SPL eraseblock copies verify", verify_redundant_spl); next_id += 1
     check(f"T{next_id:03d}", "U-Boot redundant image is exactly 4 MiB", lambda: require((ARTIFACTS / "uboot-redundant.bin").stat().st_size == 4 * 1024 * 1024, "wrong U-Boot partition image size")); next_id += 1
@@ -250,6 +254,7 @@ def main() -> int:
         "latest cold-boot markers absent")); next_id += 1
     check(f"T{next_id:03d}", "published logs contain no local workspace path", lambda: require("/home/" not in task_log + cold_log, "unsanitized workspace path")); next_id += 1
     check(f"T{next_id:03d}", "hardware and clean-build manifests remain distinct", lambda: require((ROOT / "manifests/verified-hardware-artifacts.sha256").read_text() != (ROOT / "manifests/clean-build-20260825.sha256").read_text(), "manifests unexpectedly identical")); next_id += 1
+    check(f"T{next_id:03d}", "recovery candidate and failed manifests remain distinct", lambda: require((ROOT / "manifests/source-recovery-candidate-20260825.sha256").read_text() != (ROOT / "manifests/clean-build-20260825.sha256").read_text(), "candidate reused failed artifacts")); next_id += 1
     check(f"T{next_id:03d}", "no Python bytecode is tracked", lambda: require(not command("git", "ls-files").strip().endswith(".pyc") and not any(line.endswith(".pyc") for line in command("git", "ls-files").splitlines()), "tracked bytecode")); next_id += 1
 
     print(f"SUMMARY pass={passed} fail={failed} hardware_current_build=failed-do-not-use")

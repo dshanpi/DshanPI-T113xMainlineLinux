@@ -16,6 +16,13 @@ new full hardware gate passes.
 
 ## experimental and recovery-only
 
+`source-recovery-candidate-20260825.sha256` identifies the first rebuild after
+restoring `CONFIG_CONS_INDEX=4` to the permanent U-Boot patch. Its eight
+board-specific U-Boot source files match the hardware-proven source snapshot,
+and all non-hardware gates pass. It is **experimental** until a new install,
+readback and cold-boot run succeeds; do not relabel it verified based on source
+comparison alone.
+
 Other historical bundles are not selected by this repository. They remain in
 the private pre-clean archive with their original logs and hashes. Promotion
 requires an explicit manifest plus install, readback and cold-boot evidence.

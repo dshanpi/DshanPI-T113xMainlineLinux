@@ -11,9 +11,9 @@ Signed-off-by: DshanPi SDK <sdk@dshanpi.com>
 ---
  arch/arm/mach-sunxi/Kconfig                   |  8 +++
  arch/arm/mach-sunxi/spl_spi_sunxi.c           |  6 +--
- configs/dshanpi_t113s3pro_defconfig           | 15 ++++++
+ configs/dshanpi_t113s3pro_defconfig           | 16 ++++++
  .../sun8i-t113s-dshanpi-t113s3pro.dts         | 142 ++++++++++++++++++++++++++
- 4 files changed, 168 insertions(+), 3 deletions(-)
+ 4 files changed, 169 insertions(+), 3 deletions(-)
  create mode 100644 configs/dshanpi_t113s3pro_defconfig
  create mode 100644 dts/upstream/src/arm/allwinner/sun8i-t113s-dshanpi-t113s3pro.dts
 
@@ -69,7 +69,7 @@ diff --git a/configs/dshanpi_t113s3pro_defconfig b/configs/dshanpi_t113s3pro_def
 new file mode 100644
 --- /dev/null
 +++ b/configs/dshanpi_t113s3pro_defconfig
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,16 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_SUNXI=y
 +CONFIG_DEFAULT_DEVICE_TREE="allwinner/sun8i-t113s-dshanpi-t113s3pro"
