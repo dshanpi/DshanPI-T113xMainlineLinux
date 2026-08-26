@@ -254,6 +254,7 @@ def main() -> int:
         "manifests/fes-nand-components.schema.json",
         "manifests/retired-fes-artifacts.txt",
         "scripts/prepare-fes-bundle.py",
+        "scripts/replace-imagewty-entry.py",
         "scripts/flash-fes-nand.sh",
         "scripts/package-fes-components.sh",
         "docs/fes-nand-provisioning.md",

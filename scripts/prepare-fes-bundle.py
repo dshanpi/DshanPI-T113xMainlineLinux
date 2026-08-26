@@ -14,6 +14,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
+BOOTSTRAP_MARKERS = [b"mainline u-boot size", b"mainline eGON SPL size"]
 
 
 def sha256(path: Path) -> str:
@@ -52,8 +53,14 @@ def main() -> None:
     if package_hash in retired:
         raise SystemExit(f"refusing retired FES component package: {package_hash}")
 
+    bootstrap_bytes = args.bootstrap.read_bytes()
+    missing_markers = [marker.decode("ascii") for marker in BOOTSTRAP_MARKERS if marker not in bootstrap_bytes]
+    if missing_markers:
+        raise SystemExit(f"bootstrap loader lacks mainline component capability: {missing_markers}")
+
     args.output.mkdir(parents=True, exist_ok=True)
     bootstrap = copy(args.bootstrap, args.output, "bootstrap-loader.img")
+    bootstrap["requiredMarkers"] = [marker.decode("ascii") for marker in BOOTSTRAP_MARKERS]
     package = copy(args.firmware_package, args.output, "mainline-nand-components.img")
     component_sources = {
         "boot0": copy(args.boot0, args.output, "boot0-mainline.bin"),

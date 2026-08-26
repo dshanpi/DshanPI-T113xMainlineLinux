@@ -159,3 +159,19 @@ FES device from the new full-speed FEL device. No manifest, layout, capacity,
 or verify error preceded the reset, so this attempt is classified as transport
 or FES reset instability rather than a deterministic format rejection. It was
 not automatically retried.
+
+The fifth manual-FEL attempt completed and verified MBR, `boot`, and `rootfs`,
+then proved that the new `off-before-boot` transition was executed. Boot1 still
+returned a protocol error. Comparing source and the running binary exposed a
+version drift: Tina source already accepted upstream legacy U-Boot and mainline
+eGON SPL, but the RAM-only IMAGEWTY loader embedded an older `u-boot.fex`
+without those paths. The patched vendor U-Boot has the same 966656-byte entry
+size, so a bounded IMAGEWTY v3 tool replaced only `u-boot.fex` in the known
+board-matched loader. The replacement tool rejects in-place writes, compressed
+entries, duplicate names, bad ranges, and every size mismatch.
+
+Bundle v5 pins patched loader SHA-256
+`26f4e5bc7a0e9ad77f3205c9a139a787b946c2812e6a521b7673a58e5b38f2b3`.
+Both bundle generation and OpenixCLI now require the embedded capability
+markers `mainline u-boot size` and `mainline eGON SPL size`. The old v4 manifest
+is rejected before USB with `NAND_BOOTSTRAP_CAPABILITY_MARKERS_REQUIRED`.

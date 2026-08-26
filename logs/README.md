@@ -52,3 +52,8 @@ The fourth attempt passed MBR verification but lost the FES USB device during
 rootfs transfer. Kernel evidence records its immediate re-enumeration as
 BootROM FEL on the same physical port. It is retained as a transport/FES-reset
 failure and was not automatically retried.
+The fifth attempt verified all ordinary partitions and the off-before-boot
+transition, then reproduced Boot1 rejection. Source/binary comparison proved
+the RAM-only loader embedded a stale FES U-Boot lacking the mainline component
+acceptance patch. The log pins the stale, replacement, and patched-loader
+hashes; v5 adds an embedded capability-marker gate.

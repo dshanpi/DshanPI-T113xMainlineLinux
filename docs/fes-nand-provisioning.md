@@ -73,6 +73,12 @@ FES volume; zero is reported as unavailable and never presented as a detected
 256 MiB capacity. Storage type, board-specific loader, component identities,
 and exact MBR remain mandatory gates.
 
+The RAM-only IMAGEWTY loader must embed the board-matched FES U-Boot build that
+accepts upstream legacy U-Boot and mainline eGON SPL components. The manifest
+pins the capability markers `mainline u-boot size` and
+`mainline eGON SPL size`; the bundle builder and OpenixCLI both reject an older
+loader before USB is opened even if that loader is otherwise valid IMAGEWTY.
+
 FES flash access has two distinct phases. The host uses `flash_set_on` before
 the logical-capacity probe and keeps it active through MBR and ordinary
 partition transfer. Once those partitions are verified, it must issue
