@@ -233,6 +233,50 @@ def verify_fes_host_log() -> None:
     require(rows[4]["currentFesLayoutHardwareStatus"] == "pending", "hardware status overstated")
 
 
+def verify_fes_hardware_log() -> None:
+    rows = [json.loads(line) for line in
+            (ROOT / "logs/fes-hardware-validation-20260826.jsonl").read_text().splitlines()]
+    require(len(rows) == 7, "unexpected FES hardware attempt count")
+    require([row["attempt"] for row in rows] == list(range(1, 8)), "FES attempt order changed")
+    require(all(row["result"] != "hardware-verified" for row in rows[:-1]),
+            "a failed FES attempt was promoted")
+    final = rows[-1]
+    require(final["fesExitCode"] == 0 and final["fesResult"] == "complete",
+            "final FES media operation did not complete")
+    require(final["mbrVerified"] is True, "final FES MBR was not verified")
+    require(final["partitionsVerified"] == ["boot", "rootfs"],
+            "final FES ordinary partitions were not verified")
+    require(final["boot1Verified"] is True and final["boot0Verified"] is True,
+            "final FES boot components were not verified")
+    require(final["postAction"] == "none", "FES must remain stopped before cold boot")
+    manifest = {}
+    for line in (ROOT / "manifests/hardware-verified-fes-v5-20260826.sha256").read_text().splitlines():
+        checksum, name = line.split(None, 1)
+        require(re.fullmatch(r"[0-9a-f]{64}", checksum) is not None,
+                f"invalid FES evidence SHA-256: {name}")
+        manifest[name.strip()] = checksum
+    require(manifest == final["artifactHashes"], "FES evidence manifest and hardware log differ")
+    require(final["powerCycle"]["offTimeMs"] == 1000, "cold power-off interval changed")
+    require(final["coldBootVerified"] is True and final["result"] == "hardware-verified",
+            "formal FES route lacks cold-boot qualification")
+
+
+def verify_fes_cold_boot() -> None:
+    text = (ROOT / "logs/fes-v5-cold-boot-20260826.log").read_text(errors="replace")
+    markers = [
+        "U-Boot SPL 2026.07",
+        "Trying to boot from sunxi SPI",
+        "U-Boot 2026.07",
+        "Verifying Hash Integrity ... sha256+ OK",
+        "ubi.mtd=sys root=ubi0:rootfs",
+        'ubi0: attached mtd3 (name "sys", size 251 MiB)',
+        "VFS: Mounted root (ubifs filesystem)",
+        "t113s3pro-mainline login:",
+    ]
+    require(all(marker in text for marker in markers), "formal FES cold-boot marker absent")
+    require("U-Boot 2018" not in text, "persistent boot used the RAM-only vendor loader")
+
+
 def main() -> int:
     lock = source_lock()
     checks = [
@@ -337,7 +381,9 @@ def main() -> int:
     check(f"T{next_id:03d}", "Linux config enables SPI-NAND, UBI and UBIFS", lambda: require(all(item in (ROOT / "board/dshanpi/t113s3pro/linux.fragment").read_text() for item in ("CONFIG_MTD_SPI_NAND=y", "CONFIG_MTD_UBI=y", "CONFIG_UBIFS_FS=y")), "Linux NAND/UBI options missing")); next_id += 1
     check(f"T{next_id:03d}", "task history contains exactly 232 valid JSON rows", verify_log_json); next_id += 1
     check(f"T{next_id:03d}", "latest hardware revalidation JSONL is complete", verify_revalidation_json); next_id += 1
-    check(f"T{next_id:03d}", "FES host validation evidence is bounded and pending hardware", verify_fes_host_log); next_id += 1
+    check(f"T{next_id:03d}", "FES host validation preserves its pre-hardware status", verify_fes_host_log); next_id += 1
+    check(f"T{next_id:03d}", "formal FES hardware history retains six failures and final success", verify_fes_hardware_log); next_id += 1
+    check(f"T{next_id:03d}", "formal FES v5 cold boot reaches the mainline UBIFS login", verify_fes_cold_boot); next_id += 1
     cold_log = (ROOT / "logs/final-cold-boot.log").read_text(errors="replace")
     markers = ["Trying to boot from sunxi SPI", "U-Boot 2026.07", "ubi0: attached mtd4", "VFS: Mounted root (ubifs filesystem)", "t113s3pro-mainline login:"]
     for marker in markers:
@@ -349,7 +395,8 @@ def main() -> int:
         "VFS: Mounted root (ubifs filesystem)" in latest_cold_log
         and "t113s3pro-mainline login:" in latest_cold_log,
         "latest cold-boot markers absent")); next_id += 1
-    check(f"T{next_id:03d}", "published logs contain no local workspace path", lambda: require("/home/" not in task_log + cold_log, "unsanitized workspace path")); next_id += 1
+    published_logs = task_log + cold_log + (ROOT / "logs/fes-v5-cold-boot-20260826.log").read_text(errors="replace")
+    check(f"T{next_id:03d}", "published logs contain no local workspace path", lambda: require("/home/" not in published_logs, "unsanitized workspace path")); next_id += 1
     check(f"T{next_id:03d}", "hardware and clean-build manifests remain distinct", lambda: require((ROOT / "manifests/verified-hardware-artifacts.sha256").read_text() != (ROOT / "manifests/clean-build-20260825.sha256").read_text(), "manifests unexpectedly identical")); next_id += 1
     check(f"T{next_id:03d}", "recovery candidate and failed manifests remain distinct", lambda: require((ROOT / "manifests/source-recovery-candidate-20260825.sha256").read_text() != (ROOT / "manifests/clean-build-20260825.sha256").read_text(), "candidate reused failed artifacts")); next_id += 1
     check(f"T{next_id:03d}", "hardware-verified source rebuild manifest is complete", lambda: verify_evidence_manifest(ROOT / "manifests/hardware-verified-source-rebuild-20260825.sha256")); next_id += 1
@@ -364,7 +411,7 @@ def main() -> int:
 
     print(
         f"SUMMARY pass={passed} fail={failed} "
-        "historical_hardware_bundle=verified current_fes_layout=pending-hardware"
+        "historical_hardware_bundle=verified current_fes_layout=hardware-verified"
     )
     return 1 if failed else 0
 

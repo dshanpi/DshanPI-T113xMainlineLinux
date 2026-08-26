@@ -61,3 +61,14 @@ The sixth attempt proves that v5 writes and verifies mainline Boot1. It stopped
 before Boot0 transfer because the host used a space-padded maintype after its
 own IMAGEWTY parser had normalized that field. The exact Boot0 entry and lookup
 fix are recorded without claiming Boot0 or cold-boot success.
+
+The seventh attempt is the completed formal route. FES verified the MBR,
+`boot`, `rootfs`, mainline Boot1 and mainline Boot0, returned exit code 0 and
+left the board in FES. Lynx Power then removed board power for one second and
+restored it. The independent UART3 capture in
+`fes-v5-cold-boot-20260826.log` proves a fresh SPI-NAND boot through mainline
+SPL, U-Boot 2026.07, FIT SHA-256 verification, Linux 6.18.8, UBI/UBIFS and the
+Buildroot login prompt. UART bytes were not copied into the FES protocol log.
+
+`local-validation-20260826.txt` preserves the final line-by-line repository
+gate after the hardware evidence was added: 79 passed, 0 failed.

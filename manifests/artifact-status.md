@@ -7,6 +7,12 @@ installer tasks `mainline-1787655837814079629` and
 `mainline-1787709324680503509`. Both completed at 100%, and both were followed
 by a real power cycle that reached the UBIFS login prompt on the tested board.
 
+`hardware-verified-fes-v5-20260826.sha256` identifies the formal FES NAND
+component bundle. FES verified its MBR, ordinary partitions, Boot1 and Boot0;
+a separate one-second power-off cycle then booted the persistent mainline
+system to the UBIFS login prompt. This status is limited to the tested DshanPi
+T113S3 Pro and Winbond W25N02KV.
+
 ## failed-do-not-use
 
 `clean-build-20260825.sha256` identifies an internally consistent clean rebuild

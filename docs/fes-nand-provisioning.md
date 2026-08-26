@@ -2,9 +2,10 @@
 
 ## Status
 
-`experimental-pending-cold-boot`. The existing RAM installer remains the
-hardware-verified recovery path. FES transfer success is not yet a release
-qualification result.
+`hardware-verified` for the exact v5 bundle, DshanPi T113S3 Pro and Winbond
+W25N02KV tested on 2026-08-26. FES verified every persistent component and a
+separate one-second power-off cold boot reached the mainline login prompt. This
+does not qualify other boards, NAND parts or manufacturing bad-block samples.
 
 ## Boundary
 
@@ -55,7 +56,8 @@ FES creates `boot`, `rootfs`, and autoresize `UDISK` UBI volumes inside `sys`;
 U-Boot reads the kernel FIT from `boot` and Linux mounts `rootfs`. The
 5 MiB boundary is derived from the Tina SPI-NAND source: 8 Boot0 blocks,
 24 Boot1 blocks and 8 secure-storage blocks at 128 KiB each. The remaining
-hardware task is to prove the complete FES write and cold-boot chain.
+hardware result proves the complete FES write and cold-boot chain for the
+hash-pinned v5 bundle.
 
 The bundle manifest also pins the exact FES MBR sector layout: `boot` starts
 at sector 504 with length 16632, `rootfs` starts at 17136 with length 81900,
@@ -106,6 +108,11 @@ OPENIXCLI_BIN=../OpenixCLI/target/release/openixcli \
 The command deliberately leaves the board in FES. A separate controlled power
 cycle and UART3 capture must prove `Trying to boot from sunxi SPI`, successful
 UBI/UBIFS mount and `t113s3pro-mainline login:`.
+
+That acceptance gate passed on 2026-08-26. Exact component hashes are in
+`manifests/hardware-verified-fes-v5-20260826.sha256`; protocol outcomes are in
+`logs/fes-hardware-validation-20260826.jsonl`; UART evidence is in
+`logs/fes-v5-cold-boot-20260826.log`.
 
 ## Forbidden shortcuts
 

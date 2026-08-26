@@ -1,0 +1,341 @@
+U-Boot SPL 2026.07 (Aug 26 2026 - 01:28:08 -0400)
+DRAM: 128 MiB
+Trying to boot from sunxi SPI
+
+
+U-Boot 2026.07 (Aug 26 2026 - 01:28:08 -0400) DshanPi T113S3 Pro
+
+CPU:   Allwinner R528 (SUN8I)
+Model: DshanPi T113S3 Pro
+DRAM:  128 MiB
+Core:  53 devices, 15 uclasses, devicetree: separate
+WDT:   Not starting watchdog@20500a0
+MMC:   
+Loading Environment from nowhere... OK
+In:    serial@2500c00
+Out:   serial@2500c00
+Err:   serial@2500c00
+Net:   No ethernet found.
+Hit any key to stop autoboot: 3Hit any key to stop autoboot: 2Hit any key to stop autoboot: 1Hit any key to stop autoboot: 0
+List of MTD devices:
+* spi-nand0
+  - device: flash@0
+  - parent: spi@4025000
+  - driver: spi_nand
+  - path: /soc/spi@4025000/flash@0
+  - type: NAND flash
+  - block size: 0x20000 bytes
+  - min I/O: 0x800 bytes
+  - OOB size: 128 bytes
+  - OOB available: 56 bytes
+  - ECC strength: 8 bits
+  - ECC step size: 512 bytes
+  - bitflip threshold: 6 bits
+  - 0x000000000000-0x000010000000 : "spi-nand0"
+	  - 0x000000000000-0x000000100000 : "spl"
+	  - 0x000000100000-0x000000400000 : "uboot"
+	  - 0x000000400000-0x000000500000 : "secure-storage"
+	  - 0x000000500000-0x000010000000 : "sys"
+ubi0: attaching mtd4
+ubi0: scanning is finished
+ubi0: attached mtd4 (name "sys", size 251 MiB)
+ubi0: PEB size: 131072 bytes (128 KiB), LEB size: 126976 bytes
+ubi0: min./max. I/O unit sizes: 2048/2048, sub-page size 2048
+ubi0: VID header offset: 2048 (aligned 2048), data offset: 4096
+ubi0: good PEBs: 2008, bad PEBs: 0, corrupted PEBs: 0
+ubi0: user volume: 4, internal volumes: 1, max. volumes count: 128
+ubi0: max/mean erase counter: 2/1, WL threshold: 4096, image sequence number: 0
+ubi0: available PEBs: 40, total reserved PEBs: 1968, PEBs reserved for bad PEB handling: 40
+No size specified -> Using max size (8634368)
+Read 8634368 bytes from volume boot to 44000000
+## Loading kernel (any) from FIT Image at 44000000 ...
+   Using 'conf' configuration
+   Trying 'kernel' kernel subimage
+     Description:  Linux 6.18.8
+     Type:         Kernel Image
+     Compression:  uncompressed
+     Data Start:   0x440000d0
+     Data Size:    6298120 Bytes = 6 MiB
+     Architecture: ARM
+     OS:           Linux
+     Load Address: 0x42000000
+     Entry Point:  0x42000000
+     Hash algo:    sha256
+     Hash value:   331b07178da5bd47e5529add84179d479f5be54bd0e6f814bf9444b23f1da3e3
+   Verifying Hash Integrity ... sha256+ OK
+## Loading fdt (any) from FIT Image at 44000000 ...
+   Using 'conf' configuration
+   Trying 'fdt' fdt subimage
+     Description:  DshanPi T113S3 Pro device tree
+     Type:         Flat Device Tree
+     Compression:  uncompressed
+     Data Start:   0x44601bd8
+     Data Size:    18696 Bytes = 18.3 KiB
+     Architecture: ARM
+     Load Address: 0x43000000
+     Hash algo:    sha256
+     Hash value:   feed2e1627d9aa3ab183692db00803676286b5e7ab0451eb9c087afdf95fab52
+   Verifying Hash Integrity ... sha256+ OK
+   Loading fdt from 0x44601bd8 to 0x43000000
+   Booting using the fdt blob at 0x43000000
+Working FDT set to 43000000
+   Loading Kernel Image to 42000000
+   Loading Device Tree to 42df8000, end 42dff907 ... OK
+Working FDT set to 42df8000
+
+Starting kernel ...
+
+[    0.000000] Booting Linux on physical CPU 0x0
+[    0.000000] Linux version 6.18.8 (ubuntu@ubuntu2404) (arm-buildroot-linux-gnueabihf-gcc.br_real (Buildroot 2026.08-rc1-8-g86102dd827) 15.3.0, GNU ld (GNU Binutils) 2.45.1) #1 SMP Tue Aug 25 08:40:15 EDT 2026
+[    0.000000] CPU: ARMv7 Processor [410fc075] revision 5 (ARMv7), cr=10c5387d
+[    0.000000] CPU: div instructions available: patching division code
+[    0.000000] CPU: PIPT / VIPT nonaliasing data cache, VIPT aliasing instruction cache
+[    0.000000] OF: fdt: Machine model: DshanPi T113S3 Pro (mainline)
+[    0.000000] earlycon: uart8250 at MMIO32 0x02500c00 (options '')
+[    0.000000] printk: legacy bootconsole [uart8250] enabled
+[    0.000000] printk: debug: ignoring loglevel setting.
+[    0.000000] Memory policy: Data cache writealloc
+[    0.000000] cma: Reserved 16 MiB at 0x46c00000
+[    0.000000] Zone ranges:
+[    0.000000]   Normal   [mem 0x0000000040000000-0x0000000047ffffff]
+[    0.000000]   HighMem  empty
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x0000000040000000-0x0000000047ffffff]
+[    0.000000] Initmem setup node 0 [mem 0x0000000040000000-0x0000000047ffffff]
+[    0.000000] OF: reserved mem: Reserved memory: No reserved-memory node in the DT
+[    0.000000] psci: probing for conduit method from DT.
+[    0.000000] psci: Using PSCI v0.1 Function IDs from DT
+[    0.000000] percpu: Embedded 13 pages/cpu s20684 r8192 d24372 u53248
+[    0.000000] pcpu-alloc: s20684 r8192 d24372 u53248 alloc=13*4096
+[    0.000000] pcpu-alloc: [0] 0 [0] 1 
+[    0.000000] Kernel command line: earlycon=uart8250,mmio32,0x02500c00 console=ttyS3,115200 ignore_loglevel loglevel=8 clk_ignore_unused ubi.mtd=sys root=ubi0:rootfs rootfstype=ubifs rw rootwait
+[    0.000000] printk: log buffer data + meta data: 131072 + 409600 = 540672 bytes
+[    0.000000] Dentry cache hash table entries: 16384 (order: 4, 65536 bytes, linear)
+[    0.000000] Inode-cache hash table entries: 8192 (order: 3, 32768 bytes, linear)
+[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 32768
+[    0.000000] mem auto-init: stack:all(zero), heap alloc:off, heap free:off
+[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=2, Nodes=1
+[    0.000000] rcu: Hierarchical RCU implementation.
+[    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=8 to nr_cpu_ids=2.
+[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 10 jiffies.
+[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=2
+[    0.000000] NR_IRQS: 16, nr_irqs: 16, preallocated irqs: 16
+[    0.000000] GIC: Using split EOI/Deactivate mode
+[    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[    0.000000] clocksource: timer: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 79635851949 ns
+[    0.000000] arch_timer: cp15 timer running at 24.00MHz (phys).
+[    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x588fe9dc0, max_idle_ns: 440795202592 ns
+[    0.000002] sched_clock: 56 bits at 24MHz, resolution 41ns, wraps every 4398046511097ns
+[    0.008029] Switching to timer-based delay loop, resolution 41ns
+[    0.014321] Console: colour dummy device 80x30
+[    0.018868] Calibrating delay loop (skipped), value calculated using timer frequency.. 48.00 BogoMIPS (lpj=240000)
+[    0.029251] CPU: Testing write buffer coherency: ok
+[    0.034190] pid_max: default: 32768 minimum: 301
+[    0.038979] Mount-cache hash table entries: 1024 (order: 0, 4096 bytes, linear)
+[    0.046314] Mountpoint-cache hash table entries: 1024 (order: 0, 4096 bytes, linear)
+[    0.054983] /cpus/cpu@0 missing clock-frequency property
+[    0.060391] /cpus/cpu@1 missing clock-frequency property
+[    0.065726] CPU0: thread -1, cpu 0, socket 0, mpidr 80000000
+[    0.071436] cacheinfo: Unable to detect cache hierarchy for CPU 0
+[    0.078959] Setting up static identity map for 0x40100000 - 0x40100060
+[    0.085791] rcu: Hierarchical SRCU implementation.
+[    0.090616] rcu: 	Max phase no-delay instances is 1000.
+[    0.096245] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[    0.104885] smp: Bringing up secondary CPUs ...
+[    0.110358] CPU1: thread -1, cpu 1, socket 0, mpidr 80000001
+[    0.110595] smp: Brought up 1 node, 2 CPUs
+[    0.120427] SMP: Total of 2 processors activated (96.00 BogoMIPS).
+[    0.126615] CPU: All CPU(s) started in HYP mode.
+[    0.131245] CPU: Virtualization extensions available.
+[    0.136548] Memory: 96960K/131072K available (10240K kernel code, 946K rwdata, 2632K rodata, 1024K init, 231K bss, 16904K reserved, 16384K cma-reserved, 0K highmem)
+[    0.151962] devtmpfs: initialized
+[    0.160002] VFP support v0.3: implementor 41 architecture 2 part 30 variant 7 rev 5
+[    0.167997] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604462750000 ns
+[    0.177936] posixtimers hash table entries: 1024 (order: 1, 8192 bytes, linear)
+[    0.185351] futex hash table entries: 512 (32768 bytes on 1 NUMA nodes, total 32 KiB, linear).
+[    0.194430] pinctrl core: initialized pinctrl subsystem
+[    0.201209] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.208386] DMA: preallocated 256 KiB pool for atomic coherent allocations
+[    0.216371] thermal_sys: Registered thermal governor 'step_wise'
+[    0.216619] hw-breakpoint: found 5 (+1 reserved) breakpoint and 4 watchpoint registers.
+[    0.230710] hw-breakpoint: maximum watchpoint size is 8 bytes.
+[    0.240500] /soc/clock-controller@2001000: Fixed dependency cycle(s) with /soc/rtc@7090000
+[    0.249045] /soc/mixer@5100000: Fixed dependency cycle(s) with /soc/tcon-top@5460000
+[    0.256868] /soc/mixer@5200000: Fixed dependency cycle(s) with /soc/tcon-top@5460000
+[    0.264703] /soc/tcon-top@5460000: Fixed dependency cycle(s) with /soc/mixer@5200000
+[    0.272463] /soc/tcon-top@5460000: Fixed dependency cycle(s) with /soc/lcd-controller@5470000
+[    0.281040] /soc/tcon-top@5460000: Fixed dependency cycle(s) with /soc/lcd-controller@5461000
+[    0.289587] /soc/tcon-top@5460000: Fixed dependency cycle(s) with /soc/mixer@5100000
+[    0.297403] /soc/lcd-controller@5461000: Fixed dependency cycle(s) with /soc/tcon-top@5460000
+[    0.305994] /soc/lcd-controller@5470000: Fixed dependency cycle(s) with /soc/tcon-top@5460000
+[    0.314601] /soc/clock-controller@7010000: Fixed dependency cycle(s) with /soc/clock-controller@2001000
+[    0.324011] /soc/clock-controller@7010000: Fixed dependency cycle(s) with /soc/rtc@7090000
+[    0.332302] /soc/rtc@7090000: Fixed dependency cycle(s) with /soc/clock-controller@7010000
+[    0.341006] /soc/clock-controller@2001000: Fixed dependency cycle(s) with /soc/rtc@7090000
+[    0.352602] /soc/mixer@5100000: Fixed dependency cycle(s) with /soc/tcon-top@5460000
+[    0.360681] /soc/mixer@5200000: Fixed dependency cycle(s) with /soc/tcon-top@5460000
+[    0.368847] /soc/mixer@5200000: Fixed dependency cycle(s) with /soc/tcon-top@5460000
+[    0.376778] /soc/mixer@5100000: Fixed dependency cycle(s) with /soc/tcon-top@5460000
+[    0.384589] /soc/tcon-top@5460000: Fixed dependency cycle(s) with /soc/mixer@5200000
+[    0.392480] /soc/tcon-top@5460000: Fixed dependency cycle(s) with /soc/lcd-controller@5470000
+[    0.401023] /soc/tcon-top@5460000: Fixed dependency cycle(s) with /soc/lcd-controller@5461000
+[    0.409603] /soc/tcon-top@5460000: Fixed dependency cycle(s) with /soc/mixer@5100000
+[    0.417661] /soc/tcon-top@5460000: Fixed dependency cycle(s) with /soc/lcd-controller@5461000
+[    0.426329] /soc/lcd-controller@5461000: Fixed dependency cycle(s) with /soc/tcon-top@5460000
+[    0.435158] /soc/tcon-top@5460000: Fixed dependency cycle(s) with /soc/lcd-controller@5470000
+[    0.443854] /soc/lcd-controller@5470000: Fixed dependency cycle(s) with /soc/tcon-top@5460000
+[    0.452872] /soc/clock-controller@7010000: Fixed dependency cycle(s) with /soc/clock-controller@2001000
+[    0.462401] /soc/clock-controller@7010000: Fixed dependency cycle(s) with /soc/rtc@7090000
+[    0.470835] /soc/clock-controller@7010000: Fixed dependency cycle(s) with /soc/rtc@7090000
+[    0.479272] /soc/clock-controller@2001000: Fixed dependency cycle(s) with /soc/rtc@7090000
+[    0.487709] /soc/rtc@7090000: Fixed dependency cycle(s) with /soc/clock-controller@7010000
+[    0.499570] SCSI subsystem initialized
+[    0.503739] libata version 3.00 loaded.
+[    0.507896] usbcore: registered new interface driver usbfs
+[    0.513544] usbcore: registered new interface driver hub
+[    0.518962] usbcore: registered new device driver usb
+[    0.524299] mc: Linux media interface: v0.10
+[    0.528656] videodev: Linux video capture interface: v2.00
+[    0.534255] pps_core: LinuxPPS API ver. 1 registered
+[    0.539227] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.548408] PTP clock support registered
+[    0.552938] Advanced Linux Sound Architecture Driver Initialized.
+[    0.560427] clocksource: Switched to clocksource arch_sys_counter
+[    0.576844] NET: Registered PF_INET protocol family
+[    0.582049] IP idents hash table entries: 2048 (order: 2, 16384 bytes, linear)
+[    0.589942] tcp_listen_portaddr_hash hash table entries: 512 (order: 0, 4096 bytes, linear)
+[    0.598374] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.606201] TCP established hash table entries: 1024 (order: 0, 4096 bytes, linear)
+[    0.613920] TCP bind hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[    0.621134] TCP: Hash tables configured (established 1024 bind 1024)
+[    0.627621] UDP hash table entries: 256 (order: 2, 14336 bytes, linear)
+[    0.634328] UDP-Lite hash table entries: 256 (order: 2, 14336 bytes, linear)
+[    0.641680] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[    0.648135] RPC: Registered named UNIX socket transport module.
+[    0.654172] RPC: Registered udp transport module.
+[    0.658886] RPC: Registered tcp transport module.
+[    0.663620] RPC: Registered tcp-with-tls transport module.
+[    0.669128] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[    0.676833] workingset: timestamp_bits=30 max_order=15 bucket_order=0
+[    0.684242] NFS: Registering the id_resolver key type
+[    0.689400] Key type id_resolver registered
+[    0.693624] Key type id_legacy registered
+[    0.697838] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 245)
+[    0.705347] io scheduler mq-deadline registered
+[    0.709896] io scheduler kyber registered
+[    0.713997] io scheduler bfq registered
+[    0.794911] Serial: 8250/16550 driver, 8 ports, IRQ sharing disabled
+[    0.814287] CAN device driver interface
+[    0.821951] sun6i-rtc 7090000.rtc: registered as rtc0
+[    0.827158] sun6i-rtc 7090000.rtc: setting system clock to 1970-01-05T17:13:06 UTC (407586)
+[    0.836099] i2c_dev: i2c /dev entries driver
+[    0.843455] usbcore: registered new interface driver usbhid
+[    0.849085] usbhid: USB HID core driver
+[    0.854481] hw perfevents: enabled with armv7_cortex_a7 PMU driver, 5 (8000000f) counters available
+[    0.866062] NET: Registered PF_PACKET protocol family
+[    0.871241] can: controller area network core
+[    0.875668] NET: Registered PF_CAN protocol family
+[    0.880510] can: raw protocol
+[    0.883503] can: broadcast manager protocol
+[    0.887701] can: netlink gateway - max_hops=1
+[    0.892202] Key type dns_resolver registered
+[    0.896737] Registering SWP/SWPB emulation handler
+[    0.929085] gpio gpiochip0: Static allocation of GPIO base is deprecated, use dynamic allocation.
+[    0.945910] sun20i-d1-pinctrl 2000000.pinctrl: initialized sunXi PIO driver
+[    0.955405] printk: legacy console [ttyS3] disabled
+[    0.981255] 2500c00.serial: ttyS3 at MMIO 0x2500c00 (irq = 232, base_baud = 1500000) is a 16550A
+[    0.990151] printk: legacy console [ttyS3] enabled
+[    0.990151] printk: legacy console [ttyS3] enabled
+[    0.999791] printk: legacy bootconsole [uart8250] disabled
+[    0.999791] printk: legacy bootconsole [uart8250] disabled
+[    1.013725] spi-nand spi0.0: Winbond SPI NAND was found.
+[    1.019067] spi-nand spi0.0: 256 MiB, block size: 128 KiB, page size: 2048, OOB size: 128
+[    1.027761] 4 fixed-partitions partitions found on MTD device spi0.0
+[    1.034161] Creating 4 MTD partitions on "spi0.0":
+[    1.038959] 0x000000000000-0x000000100000 : "spl"
+[    1.046466] 0x000000100000-0x000000400000 : "uboot"
+[    1.057064] 0x000000400000-0x000000500000 : "secure-storage"
+[    1.065104] 0x000000500000-0x000010000000 : "sys"
+[    1.420453] random: crng init done
+[    1.479718] dwmac-sun8i 4500000.ethernet: IRQ eth_wake_irq not found
+[    1.486206] dwmac-sun8i 4500000.ethernet: IRQ eth_lpi not found
+[    1.492163] dwmac-sun8i 4500000.ethernet: IRQ sfty not found
+[    1.497898] dwmac-sun8i 4500000.ethernet: No regulator found
+[    1.503692] dwmac-sun8i 4500000.ethernet: PTP uses main clock
+[    1.509812] dwmac-sun8i 4500000.ethernet: No HW DMA feature register supported
+[    1.517087] dwmac-sun8i 4500000.ethernet: RX Checksum Offload Engine supported
+[    1.524335] dwmac-sun8i 4500000.ethernet: COE Type 2
+[    1.529304] dwmac-sun8i 4500000.ethernet: TX Checksum insertion supported
+[    1.536121] dwmac-sun8i 4500000.ethernet: Normal descriptors
+[    1.541795] dwmac-sun8i 4500000.ethernet: Chain mode enabled
+[    1.675646] ehci-platform 4200000.usb: EHCI Host Controller
+[    1.676000] usb_phy_generic usb_phy_generic.1.auto: dummy supplies not allowed for exclusive requests (id=vbus)
+[    1.681362] ehci-platform 4200000.usb: new USB bus registered, assigned bus number 1
+[    1.694015] ohci-platform 4200400.usb: Generic Platform OHCI controller
+[    1.705895] ohci-platform 4200400.usb: new USB bus registered, assigned bus number 2
+[    1.710778] ubi0: attaching mtd3
+[    1.717589] sunxi-mmc 4020000.mmc: Got CD GPIO
+[    1.722629] ohci-platform 4200400.usb: irq 237, io mem 0x04200400
+[    1.729016] ehci-platform 4200000.usb: irq 235, io mem 0x04200000
+[    1.748137] sunxi-mmc 4020000.mmc: initialized, max. request size: 2048 KB, uses new timings mode
+[    1.757281] ehci-platform 4200000.usb: USB 2.0 started, EHCI 1.00
+[    1.764444] hub 1-0:1.0: USB hub found
+[    1.768281] hub 1-0:1.0: 1 port detected
+[    1.786201] hub 2-0:1.0: USB hub found
+[    1.790292] hub 2-0:1.0: 1 port detected
+[    2.040454] usb 1-1: new high-speed USB device number 2 using ehci-platform
+[    2.211920] hub 1-1:1.0: USB hub found
+[    2.215847] hub 1-1:1.0: 4 ports detected
+[    3.163440] ubi0: scanning is finished
+[    3.231778] ubi0: attached mtd3 (name "sys", size 251 MiB)
+[    3.237302] ubi0: PEB size: 131072 bytes (128 KiB), LEB size: 126976 bytes
+[    3.244239] ubi0: min./max. I/O unit sizes: 2048/2048, sub-page size 2048
+[    3.251046] ubi0: VID header offset: 2048 (aligned 2048), data offset: 4096
+[    3.258007] ubi0: good PEBs: 2008, bad PEBs: 0, corrupted PEBs: 0
+[    3.264111] ubi0: user volume: 4, internal volumes: 1, max. volumes count: 128
+[    3.271342] ubi0: max/mean erase counter: 2/1, WL threshold: 4096, image sequence number: 0
+[    3.279690] ubi0: available PEBs: 40, total reserved PEBs: 1968, PEBs reserved for bad PEB handling: 40
+[    3.289116] ubi0: background thread "ubi_bgt0d" started, PID 59
+[    3.289419] clk: Not disabling unused clocks
+[    3.299366] PM: genpd: Disabling unused power domains
+[    3.304469] ALSA device list:
+[    3.307442]   No soundcards found.
+[    3.311504] check access for rdinit=/init failed: -2, ignoring
+[    3.318621] UBIFS (ubi0:2): Mounting in unauthenticated mode
+[    3.324599] UBIFS (ubi0:2): background thread "ubifs_bgt0_2" started, PID 60
+[    3.389925] UBIFS (ubi0:2): UBIFS: mounted UBI device 0, volume 2, name "rootfs"
+[    3.397421] UBIFS (ubi0:2): LEB size: 126976 bytes (124 KiB), min./max. I/O unit sizes: 2048 bytes/2048 bytes
+[    3.407354] UBIFS (ubi0:2): FS size: 40632320 bytes (38 MiB, 320 LEBs), max 1900 LEBs, journal size 9023488 bytes (8 MiB, 72 LEBs)
+[    3.419101] UBIFS (ubi0:2): reserved for root: 0 bytes (0 KiB)
+[    3.424945] UBIFS (ubi0:2): media format: w4/r0 (latest is w5/r0), UUID 4957E78B-6F8A-4047-9507-760314F63768, small LPT model
+[    3.438431] VFS: Mounted root (ubifs filesystem) on device 0:15.
+[    3.446257] devtmpfs: mounted
+[    3.450716] Freeing unused kernel image (initmem) memory: 1024K
+[    3.456895] Run /sbin/init as init process
+[    3.461022]   with arguments:
+[    3.463993]     /sbin/init
+[    3.466700]   with environment:
+[    3.469839]     HOME=/
+[    3.472212]     TERM=linux
+Saving 256 bits of creditable seed for next boot
+Starting syslogd: OK
+Starting klogd: OK
+Running sysctl: OK
+Starting udevd: OK
+[    4.085721] udevd[94]: starting version 3.2.14
+[    4.226694] udevd[94]: starting eudev-3.2.14
+Starting network: [    5.274064] dwmac-sun8i 4500000.ethernet eth0: Register MEM_TYPE_PAGE_POOL RxQ-0
+[    5.283613] dwmac-sun8i 4500000.ethernet eth0: PHY [stmmac-0:00] driver [RTL8201F Fast Ethernet] (irq=POLL)
+[    5.296805] dwmac-sun8i 4500000.ethernet eth0: No Safety Features support found
+[    5.304177] dwmac-sun8i 4500000.ethernet eth0: No MAC Management Counters available
+[    5.317316] dwmac-sun8i 4500000.ethernet eth0: PTP not supported by HW
+[    5.323943] dwmac-sun8i 4500000.ethernet eth0: configuring for phy/rmii link mode
+udhcpc: started, v1.38.0
+udhcpc: broadcasting discover
+udhcpc: no lease, forking to background
+OK
+Starting crond: OK
+
+DshanPi T113S3 Pro - mainline Buildroot
+t113s3pro-mainline login: 

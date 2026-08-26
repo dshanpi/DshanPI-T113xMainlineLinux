@@ -1,0 +1,80 @@
+[PASS] T001 source lock pins Buildroot commit
+[PASS] T002 source lock pins Linux 6.18.8
+[PASS] T003 source lock pins U-Boot 2026.07
+[PASS] T004 Buildroot checkout matches source lock
+[PASS] T005 Linux archive hash is pinned
+[PASS] T006 U-Boot archive hash is pinned
+[PASS] T007 required source exists: board/dshanpi/t113s3pro/linux-dts/allwinner/sun8i-t113s-dshanpi-t113s3pro.dts
+[PASS] T008 required source exists: board/dshanpi/t113s3pro/uboot.fragment
+[PASS] T009 required source exists: configs/dshanpi_t113s3pro_nand_defconfig
+[PASS] T010 required source exists: board/dshanpi/t113s3pro/installer-init
+[PASS] T011 required source exists: manifests/fes-nand-components.schema.json
+[PASS] T012 required source exists: manifests/retired-fes-artifacts.txt
+[PASS] T013 required source exists: scripts/prepare-fes-bundle.py
+[PASS] T014 required source exists: scripts/replace-imagewty-entry.py
+[PASS] T015 required source exists: scripts/flash-fes-nand.sh
+[PASS] T016 required source exists: scripts/package-fes-components.sh
+[PASS] T017 required source exists: docs/fes-nand-provisioning.md
+[PASS] T018 required source exists: logs/fes-host-validation-20260826.jsonl
+[PASS] T019 shell syntax: scripts/bootstrap-buildroot.sh
+[PASS] T020 shell syntax: scripts/build-and-package.sh
+[PASS] T021 shell syntax: scripts/build-everything.sh
+[PASS] T022 shell syntax: scripts/build.sh
+[PASS] T023 shell syntax: scripts/flash-and-monitor.sh
+[PASS] T024 shell syntax: scripts/flash-fes-nand.sh
+[PASS] T025 shell syntax: scripts/flash-mainline-fel.sh
+[PASS] T026 shell syntax: scripts/package-fes-components.sh
+[PASS] T027 shell syntax: scripts/package-mainline-fel.sh
+[PASS] T028 shell syntax: board/dshanpi/t113s3pro/make-fel-installer-initramfs.sh
+[PASS] T029 shell syntax: board/dshanpi/t113s3pro/make-mainline-fel-images.sh
+[PASS] T030 shell syntax: board/dshanpi/t113s3pro/installer-init
+[PASS] T031 FES NAND manifest schema is valid JSON
+[PASS] T032 FES NAND manifest pins exact boot/rootfs/UDISK sectors
+[PASS] T033 Python syntax: scripts/make-openix-plan.py
+[PASS] T034 Python syntax: scripts/prepare-fes-bundle.py
+[PASS] T035 Python syntax: scripts/replace-imagewty-entry.py
+[PASS] T036 Python syntax: scripts/select-openix-device.py
+[PASS] T037 Python syntax: scripts/serial-installer-monitor.py
+[PASS] T038 Python syntax: scripts/test-workflow-helpers.py
+[PASS] T039 Python syntax: scripts/validate-local.py
+[PASS] T040 Python syntax: board/dshanpi/t113s3pro/verify-mainline-uboot.py
+[PASS] T041 host workflow helper unit tests
+[PASS] T042 SPL and U-Boot proper pass same-build verifier
+[PASS] T043 packaged SPL passes independent eGON checks
+[PASS] T044 U-Boot environment is nowhere
+[PASS] T045 U-Boot FAT/SPI environment backends are disabled
+[PASS] T046 U-Boot console index selects UART3
+[PASS] T047 FEL artifact checksums verify
+[PASS] T048 source-recovery candidate evidence manifest is complete
+[PASS] T049 payload archive membership and internal hashes verify
+[PASS] T050 eight redundant SPL eraseblock copies verify
+[PASS] T051 U-Boot redundant image matches FES 3 MiB Boot1 reservation
+[PASS] T052 installer FIT stays below 8 MiB
+[PASS] T053 payload archive stays below 24 MiB
+[PASS] T054 OpenixCLI plan roles, hashes and ranges verify
+[PASS] T055 boot FIT parses with mainline mkimage
+[PASS] T056 installer FIT parses with mainline mkimage
+[PASS] T057 retired vendor/experimental artifacts are absent
+[PASS] T058 UART3 PB6/PB7 console mapping is present
+[PASS] T059 SPI-NAND layout matches FES physical reservations
+[PASS] T060 U-Boot loads FIT from the FES-created boot UBI volume
+[PASS] T061 Linux config enables SPI-NAND, UBI and UBIFS
+[PASS] T062 task history contains exactly 232 valid JSON rows
+[PASS] T063 latest hardware revalidation JSONL is complete
+[PASS] T064 FES host validation preserves its pre-hardware status
+[PASS] T065 formal FES hardware history retains six failures and final success
+[PASS] T066 formal FES v5 cold boot reaches the mainline UBIFS login
+[PASS] T067 historical cold-boot marker: Trying to boot from sunxi SPI
+[PASS] T068 historical cold-boot marker: U-Boot 2026.07
+[PASS] T069 historical cold-boot marker: ubi0: attached mtd4
+[PASS] T070 historical cold-boot marker: VFS: Mounted root (ubifs filesystem)
+[PASS] T071 historical cold-boot marker: t113s3pro-mainline login:
+[PASS] T072 history retains successful installer task ID
+[PASS] T073 latest power-cycle reaches UBIFS login
+[PASS] T074 published logs contain no local workspace path
+[PASS] T075 hardware and clean-build manifests remain distinct
+[PASS] T076 recovery candidate and failed manifests remain distinct
+[PASS] T077 hardware-verified source rebuild manifest is complete
+[PASS] T078 source rebuild hardware evidence has installer and two cold boots
+[PASS] T079 no Python bytecode is tracked
+SUMMARY pass=79 fail=0 historical_hardware_bundle=verified current_fes_layout=hardware-verified

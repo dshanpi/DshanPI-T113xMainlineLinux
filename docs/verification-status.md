@@ -87,3 +87,26 @@ power and marker evidence is in
 `logs/source-rebuild-hardware-validation-20260825.jsonl`. This closes the source
 recovery gate for the tested board/NAND combination. It does not convert the RAM
 installer into a general manufacturing provisioning guarantee.
+
+## Formal FES NAND component route
+
+On 2026-08-26 the exact v5 component bundle completed the separate production
+architecture: BootROM FEL loaded the board-matched Tina loader into RAM, FES
+identified SPI-NAND, created the pinned layout and verified the MBR, `boot`,
+`rootfs`, mainline Boot1 and mainline Boot0. OpenixCLI exited 0 with post-action
+`none`; it did not reboot the running loader or fall back to the RAM installer.
+
+Lynx Power device 5/channel 6 then removed power for one second and restored
+it. Independent UART3 evidence starts at mainline `U-Boot SPL 2026.07`, reports
+`Trying to boot from sunxi SPI`, verifies the FIT hashes, attaches the 251 MiB
+`sys` region, mounts `rootfs` through UBIFS and reaches
+`t113s3pro-mainline login:`. The seven-attempt history is preserved in
+[`../logs/fes-hardware-validation-20260826.jsonl`](../logs/fes-hardware-validation-20260826.jsonl),
+the cold boot in
+[`../logs/fes-v5-cold-boot-20260826.log`](../logs/fes-v5-cold-boot-20260826.log),
+and exact hashes in
+[`../manifests/hardware-verified-fes-v5-20260826.sha256`](../manifests/hardware-verified-fes-v5-20260826.sha256).
+
+This qualifies only the recorded DshanPi T113S3 Pro, W25N02KV and v5 hashes.
+Manufacturing qualification still requires a defined sample size and induced
+or naturally occurring bad-block coverage.

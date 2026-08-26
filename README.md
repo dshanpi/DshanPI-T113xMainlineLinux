@@ -26,7 +26,7 @@ BootROM FEL
   -> cold boot into the mainline system
 ```
 
-The formal NAND provisioning route is now being implemented separately:
+The formal NAND provisioning route is implemented separately:
 
 ```text
 BootROM FEL -> board-matched Tina loader in RAM -> FES
@@ -35,8 +35,10 @@ BootROM FEL -> board-matched Tina loader in RAM -> FES
 ```
 
 The loader is transport/bootstrap only and is never selected as persistent
-firmware. This route is currently `experimental-pending-cold-boot`; FES media
-completion must not be presented as cold-boot success. See
+firmware. The exact v5 bundle completed FES verification and a separate
+power-off cold boot on 2026-08-26; it is `hardware-verified` for the tested
+board and NAND only. FES media completion alone must still never be presented
+as cold-boot success. See
 [`docs/fes-nand-provisioning.md`](docs/fes-nand-provisioning.md).
 
 The RAM installer uses the mainline Linux NAND core, MTD tools and UBI. It is a
@@ -57,8 +59,9 @@ source-recovery candidate passes all local gates, but that exact candidate is
 hardware-verified by a complete installer, warm reboot and two controlled
 power-off cold boots for the previous layout. The exact hashes are in
 `manifests/hardware-verified-source-rebuild-20260825.sha256`. This feature branch
-remains preserved; the current FES-aligned source is explicitly pending new
-hardware qualification and is not yet a manufacturing NAND release.
+remains preserved. The current FES-aligned source and v5 artifacts have now
+passed their hardware gate, but this is not yet a general manufacturing NAND
+qualification across bad-block populations.
 
 ## Build
 

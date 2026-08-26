@@ -182,3 +182,15 @@ mainline Boot1. Boot0 was not sent because the host could not find it. The
 container entry is `BOOT/BOOT0_0000000000`, while the lookup used `BOOT` padded
 with four spaces even though `OpenixPacker` normalizes fixed-width maintypes.
 The mapping now uses normalized `BOOT` and has a storage-type-five unit test.
+
+The seventh manual-FEL attempt used the corrected OpenixCLI build and the same
+v5 bundle. It verified the exact MBR, `boot`, `rootfs`, mainline Boot1 and all
+eight mainline Boot0 copies, then completed with exit code 0 and post-action
+`none`. No retry or RAM-installer fallback occurred. Lynx Power subsequently
+cycled device 5 on controller channel 6 with a one-second off interval. The
+independent UART3 PB6/PB7 capture began at `U-Boot SPL 2026.07`, reported
+`Trying to boot from sunxi SPI`, verified both FIT hashes, attached the FES
+`sys` UBI layout, mounted the `rootfs` UBIFS volume and reached
+`t113s3pro-mainline login:`. This closes the formal FES NAND component route
+for the exact hardware and hashes recorded in
+`manifests/hardware-verified-fes-v5-20260826.sha256`.
