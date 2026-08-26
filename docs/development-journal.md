@@ -149,3 +149,13 @@ be verified. This established the second half of the vendor lifecycle:
 `flash_set_off` is mandatory after partition verification and before the
 separate FES Boot1/Boot0 component commands. The partially provisioned device
 was left in FES and was not retried.
+
+The fourth manual-FEL attempt incorporated the corrected off-before-boot
+sequence, but did not reach that gate. MBR verification passed and transfer
+advanced through `boot` into `rootfs` before the FES USB device disconnected at
+about 60.27% overall progress. One second later the same physical port
+re-enumerated as BootROM FEL. Kernel USB history distinguishes the high-speed
+FES device from the new full-speed FEL device. No manifest, layout, capacity,
+or verify error preceded the reset, so this attempt is classified as transport
+or FES reset instability rather than a deterministic format rejection. It was
+not automatically retried.

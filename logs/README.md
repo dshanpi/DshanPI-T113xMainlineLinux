@@ -48,3 +48,7 @@ The third attempt passed those gates and verified MBR, boot, and rootfs, then
 failed before Boot1/Boot0 because partition flash access had not been closed.
 It records the required `set_on` partition phase followed by `set_off` before
 the dedicated boot-component phase.
+The fourth attempt passed MBR verification but lost the FES USB device during
+rootfs transfer. Kernel evidence records its immediate re-enumeration as
+BootROM FEL on the same physical port. It is retained as a transport/FES-reset
+failure and was not automatically retried.
