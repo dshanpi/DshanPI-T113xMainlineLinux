@@ -219,18 +219,18 @@ impl<'a> FesHandler<'a> {
             self.logger.complete_stage();
 
             self.logger.set_current_partition("");
+            if options.nand_constraints.is_some() {
+                ctx.fes_flash_set_onoff(storage_type, false)
+                    .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
+                self.logger.info("NAND_FLASH_ACCESS:off-before-boot");
+            }
+
             self.logger.begin_stage(StageType::FesBoot);
             let boot_download = BootDownload::new(&*self.logger);
             boot_download
                 .execute(ctx, packer, secure, storage_type)
                 .await?;
             self.logger.complete_stage();
-        }
-
-        if options.nand_constraints.is_some() {
-            ctx.fes_flash_set_onoff(storage_type, false)
-                .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
-            self.logger.info("NAND_FLASH_ACCESS:off");
         }
 
         Ok(())

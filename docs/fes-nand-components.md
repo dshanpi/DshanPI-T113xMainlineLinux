@@ -45,6 +45,9 @@ the manifest directory and cannot escape through `..` or symlinks.
   logical size must contain all fixed volumes and stay below the raw-capacity
   bound, while zero is reported as unavailable rather than misreported as a
   detected capacity.
+- NAND is initialized with `flash_set_on` before that probe and remains active
+  through MBR and ordinary partition transfer. After partition verification,
+  `flash_set_off` is mandatory before the distinct FES Boot1/Boot0 commands.
 - Only `partition_erase` or `full_erase` is accepted.
 - The selected endpoint must be exactly `libusb:BUS:PORT`.
 - FEL-to-FES reconnection remains bound to the same USB bus and port.
