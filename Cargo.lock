@@ -874,7 +874,7 @@ checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
 [[package]]
 name = "libefex"
 version = "0.1.0"
-source = "git+https://github.com/YuzukiTsuru/libefex#3752e38ff8e69190c53cd43290a8102beab55e73"
+source = "git+https://github.com/YuzukiTsuru/libefex?rev=3752e38ff8e69190c53cd43290a8102beab55e73#3752e38ff8e69190c53cd43290a8102beab55e73"
 dependencies = [
  "libc",
  "libefex-sys",
@@ -884,7 +884,7 @@ dependencies = [
 [[package]]
 name = "libefex-sys"
 version = "0.1.0"
-source = "git+https://github.com/YuzukiTsuru/libefex#3752e38ff8e69190c53cd43290a8102beab55e73"
+source = "git+https://github.com/YuzukiTsuru/libefex?rev=3752e38ff8e69190c53cd43290a8102beab55e73#3752e38ff8e69190c53cd43290a8102beab55e73"
 dependencies = [
  "cc",
  "cmake",

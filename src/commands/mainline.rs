@@ -153,6 +153,17 @@ fn emit(jsonl: bool, value: serde_json::Value) {
     let _ = std::io::stdout().flush();
 }
 
+fn ram_handoff_complete_event(written_bytes: u64, total_bytes: u64) -> serde_json::Value {
+    json!({
+        "event":"complete",
+        "phase":"ram_handoff_complete",
+        "scope":"fel_ram_handoff",
+        "installerStatus":"not_observed",
+        "writtenBytes":written_bytes,
+        "totalBytes":total_bytes,
+    })
+}
+
 fn cancellation_requested() -> bool {
     std::env::var_os("LYNX_FLASH_CANCEL_FILE")
         .map(PathBuf::from)
@@ -796,7 +807,7 @@ pub fn execute(
     context.fel_exec(plan.entry_address)?;
     emit(
         jsonl,
-        json!({"event":"complete","phase":"complete","writtenBytes":written_bytes,"totalBytes":total_bytes}),
+        ram_handoff_complete_event(written_bytes, total_bytes),
     );
     Ok(())
 }
@@ -812,6 +823,17 @@ mod endpoint_tests {
             vid: 0x1f3a,
             pid: 0xefe8,
         }
+    }
+
+    #[test]
+    fn completion_event_is_scoped_to_ram_handoff() {
+        let event = ram_handoff_complete_event(12, 34);
+        assert_eq!(event["event"], "complete");
+        assert_eq!(event["phase"], "ram_handoff_complete");
+        assert_eq!(event["scope"], "fel_ram_handoff");
+        assert_eq!(event["installerStatus"], "not_observed");
+        assert_eq!(event["writtenBytes"], 12);
+        assert_eq!(event["totalBytes"], 34);
     }
 
     #[test]

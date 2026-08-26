@@ -4,6 +4,7 @@
 
 use colored::Colorize;
 use libefex::{Context, DeviceMode};
+use serde_json::json;
 
 /// Execute the scan command
 ///
@@ -14,11 +15,32 @@ use libefex::{Context, DeviceMode};
 ///
 /// # Returns
 /// Ok(()) on success, Error on failure
-pub async fn execute(detailed: bool) -> anyhow::Result<()> {
+pub async fn execute(detailed: bool, jsonl: bool) -> anyhow::Result<()> {
+    if jsonl {
+        println!("{}", json!({"event":"scan_started"}));
+    }
+    let devices = Context::scan_usb_devices()?;
+
+    if jsonl {
+        for dev in &devices {
+            println!(
+                "{}",
+                json!({
+                    "event":"device",
+                    "bus":dev.bus,
+                    "port":dev.port,
+                    "vid":dev.vid,
+                    "pid":dev.pid,
+                    "location":format!("libusb:{}:{}", dev.bus, dev.port),
+                })
+            );
+        }
+        println!("{}", json!({"event":"scan_complete","count":devices.len()}));
+        return Ok(());
+    }
+
     println!("{}", "Scanning USB devices...".cyan().bold());
     println!();
-
-    let devices = Context::scan_usb_devices()?;
 
     if devices.is_empty() {
         println!("{}", "No devices found.".yellow());

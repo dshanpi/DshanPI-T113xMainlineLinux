@@ -61,7 +61,7 @@ async fn main() -> anyhow::Result<()> {
         }
         Some(Commands::Scan { detailed }) => {
             setup_logging(cli.verbose);
-            commands::scan::execute(detailed).await?;
+            commands::scan::execute(detailed, cli.output == OutputFormat::Jsonl).await?;
         }
         Some(Commands::Flash {
             firmware,

@@ -22,6 +22,8 @@ OpenixCLI is a powerful and user-friendly CLI tool designed for flashing firmwar
 - **Partition Selection**: Flash specific partitions or entire firmware
 - **Verbose Logging**: Detailed debug output for troubleshooting
 - **Mainline FEL RAM Boot**: Hash-verified R528/T113 SPL, U-Boot and installer loading
+- **Machine-readable Scan**: JSONL device identity and stable `libusb:BUS:PORT`
+  output for wrappers that reject ambiguous targets
 
 ## Installation
 
@@ -33,12 +35,16 @@ OpenixCLI is a powerful and user-friendly CLI tool designed for flashing firmwar
 ### Build from Source
 
 ```bash
-git clone https://github.com/YuzukiTsuru/OpenixCLI
+git clone -b feat/mainline-fel-ram-installer \
+  https://github.com/100askTeam/OpenixCLI.git
 cd OpenixCLI
-cargo build --release
+cargo build --release --locked
 ```
 
 The compiled binary will be available at `target/release/openixcli`.
+
+The mainline branch pins its libefex Git revision in both `Cargo.toml` and
+`Cargo.lock`. Do not omit `--locked` in reproducible or release builds.
 
 ## Usage
 
@@ -49,6 +55,11 @@ until the board-side installer provides media verification evidence.
 
 The named local test gates and their latest results are recorded in
 [`docs/mainline-local-validation-20260825.md`](docs/mainline-local-validation-20260825.md).
+
+For `boot-mainline`, the terminal OpenixCLI event is only a RAM handoff result:
+`phase=ram_handoff_complete`, `scope=fel_ram_handoff`, and
+`installerStatus=not_observed`. NAND completion must come from the independent
+board UART installer markers; OpenixCLI does not synthesize that result.
 
 ### Scan for Devices
 
