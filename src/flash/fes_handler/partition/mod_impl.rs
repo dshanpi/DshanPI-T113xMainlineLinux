@@ -41,8 +41,8 @@ impl<'a> PartitionDownload<'a> {
         packer: &mut OpenixPacker,
         download_list: &[PartitionDownloadInfo],
         verify: bool,
-        strict: bool,
         storage_type: u32,
+        flash_access_already_on: bool,
     ) -> FlashResult<()> {
         if download_list.is_empty() {
             self.logger.warn("No partitions to download");
@@ -54,9 +54,11 @@ impl<'a> PartitionDownload<'a> {
         self.logger
             .info(&format!("Flashing {} partitions...", download_list.len()));
 
-        self.logger.info("Turning on flash access...");
-        ctx.fes_flash_set_onoff(storage_type, true)
-            .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
+        if !flash_access_already_on {
+            self.logger.info("Turning on flash access...");
+            ctx.fes_flash_set_onoff(storage_type, true)
+                .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
+        }
 
         self.written_bytes.store(0, Ordering::SeqCst);
         self.last_speed_update.store(0, Ordering::SeqCst);
@@ -71,13 +73,12 @@ impl<'a> PartitionDownload<'a> {
                 .await?;
         }
 
-        self.logger.info("Turning off flash access...");
-        if let Err(e) = ctx.fes_flash_set_onoff(storage_type, false) {
-            if strict {
-                return Err(FlashError::UsbTransferError(e.to_string()));
+        if !flash_access_already_on {
+            self.logger.info("Turning off flash access...");
+            if let Err(e) = ctx.fes_flash_set_onoff(storage_type, false) {
+                self.logger
+                    .warn(&format!("Failed to turn off flash access: {}", e));
             }
-            self.logger
-                .warn(&format!("Failed to turn off flash access: {}", e));
         }
 
         let written = self.written_bytes.load(Ordering::SeqCst);

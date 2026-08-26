@@ -39,7 +39,12 @@ the manifest directory and cannot escape through `..` or symlinks.
 ## Hardware safety gates
 
 - Only NAND or SPI-NAND is accepted after FES discovery.
-- Detected capacity must exactly match the manifest.
+- Block-media capacity gates are exact. For NAND, vendor FES may expose only
+  current UBI logical sectors and may return zero before a layout exists. The
+  manifest must explicitly select `fes-logical-or-unavailable`; non-zero
+  logical size must contain all fixed volumes and stay below the raw-capacity
+  bound, while zero is reported as unavailable rather than misreported as a
+  detected capacity.
 - Only `partition_erase` or `full_erase` is accepted.
 - The selected endpoint must be exactly `libusb:BUS:PORT`.
 - FEL-to-FES reconnection remains bound to the same USB bus and port.

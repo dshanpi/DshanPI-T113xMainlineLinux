@@ -72,30 +72,43 @@ impl<'a> FesHandler<'a> {
             StorageType::from(storage_type)
         ));
 
-        // FES reports a valid media size only after flash access is selected
-        // with the detected storage type and placed in the off/query state.
-        ctx.fes_flash_set_onoff(storage_type, false)
+        if options.nand_constraints.is_some()
+            && !matches!(
+                StorageType::from(storage_type),
+                StorageType::Nand | StorageType::Spinand
+            )
+        {
+            return Err(FlashError::InvalidFirmwareFormat(
+                "NAND_STORAGE_PREFLIGHT_REJECTED:target is not NAND/SPI-NAND".into(),
+            ));
+        }
+
+        // Initialize the vendor NAND/UBI layer before querying logical media
+        // size. On SPI-NAND this probe is not raw chip capacity and may be zero
+        // when no existing UBI user-volume layout can be attached.
+        ctx.fes_flash_set_onoff(storage_type, true)
             .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
         let flash_size = ctx
             .fes_probe_flash_size()
             .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
         self.logger.info(&format!(
-            "Flash size: {} MB",
+            "FES logical usable sectors: {flash_size} ({} MiB)",
             (flash_size as u64) * 512 / 1024 / 1024
         ));
 
         if let Some(constraints) = &options.nand_constraints {
-            let detected = StorageType::from(storage_type);
-            if !matches!(detected, StorageType::Nand | StorageType::Spinand) {
-                return Err(FlashError::InvalidFirmwareFormat(
-                    "NAND_STORAGE_PREFLIGHT_REJECTED:target is not NAND/SPI-NAND".into(),
-                ));
-            }
             let detected_bytes = flash_size as u64 * 512;
-            if detected_bytes != constraints.expected_capacity_bytes {
+            if flash_size == 0 && constraints.allow_unavailable_capacity {
+                self.logger.warn(
+                    "NAND_CAPACITY_PROBE:unavailable; FES exposes logical UBI size, not raw chip capacity",
+                );
+            } else if (flash_size as u64) < constraints.minimum_logical_sectors
+                || detected_bytes > constraints.expected_capacity_bytes
+            {
                 return Err(FlashError::InvalidFirmwareFormat(format!(
-                    "NAND_CAPACITY_MISMATCH:expected={}:detected={detected_bytes}",
-                    constraints.expected_capacity_bytes
+                    "NAND_LOGICAL_CAPACITY_REJECTED:minSectors={}:detectedSectors={flash_size}:rawUpperBound={}",
+                    constraints.minimum_logical_sectors,
+                    constraints.expected_capacity_bytes,
                 )));
             }
             if !matches!(
@@ -197,8 +210,8 @@ impl<'a> FesHandler<'a> {
                         packer,
                         &download_list,
                         options.verify,
-                        options.nand_constraints.is_some(),
                         storage_type,
+                        options.nand_constraints.is_some(),
                     )
                     .await?;
             }
@@ -212,6 +225,12 @@ impl<'a> FesHandler<'a> {
                 .execute(ctx, packer, secure, storage_type)
                 .await?;
             self.logger.complete_stage();
+        }
+
+        if options.nand_constraints.is_some() {
+            ctx.fes_flash_set_onoff(storage_type, false)
+                .map_err(|e| FlashError::UsbTransferError(e.to_string()))?;
+            self.logger.info("NAND_FLASH_ACCESS:off");
         }
 
         Ok(())

@@ -59,6 +59,7 @@ pub struct StorageExpectation {
     pub capacity_bytes: u64,
     pub page_size: u32,
     pub erase_size: u32,
+    pub capacity_probe_policy: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -262,6 +263,9 @@ pub fn validate_manifest(path: &Path) -> anyhow::Result<ValidatedManifest> {
     }
     if manifest.storage.kind != "spi-nand" && manifest.storage.kind != "nand" {
         bail!("NAND_MANIFEST_STORAGE_MUST_BE_NAND");
+    }
+    if manifest.storage.capacity_probe_policy != "fes-logical-or-unavailable" {
+        bail!("NAND_MANIFEST_CAPACITY_PROBE_POLICY_UNSUPPORTED");
     }
     if manifest.storage.capacity_bytes == 0
         || manifest.storage.page_size == 0
@@ -505,6 +509,15 @@ pub async fn execute(args: NandComponentArgs) -> anyhow::Result<()> {
         reconnect_interval_ms: args.reconnect_interval_ms,
         nand_constraints: Some(NandConstraints {
             expected_capacity_bytes: validated.manifest.storage.capacity_bytes,
+            minimum_logical_sectors: validated
+                .manifest
+                .layout
+                .fes_partitions
+                .iter()
+                .map(|partition| partition.address_sectors + partition.size_sectors)
+                .max()
+                .unwrap_or(0),
+            allow_unavailable_capacity: true,
             expected_partitions: validated
                 .manifest
                 .components
@@ -637,7 +650,7 @@ mod tests {
             "soc":"r528",
             "bootstrap":{"file":"bootstrap.img","sha256":digest(b"IMAGEWTY-bootstrap")},
             "firmwarePackage":{"file":"components.img","sha256":digest(b"IMAGEWTY-components")},
-            "storage":{"kind":"spi-nand","capacityBytes":268435456u64,"pageSize":2048,"eraseSize":131072},
+            "storage":{"kind":"spi-nand","capacityBytes":268435456u64,"pageSize":2048,"eraseSize":131072,"capacityProbePolicy":"fes-logical-or-unavailable"},
             "layout":{"version":"test-v1","partitions":[
                 {"name":"spl","offset":0,"size":1048576},
                 {"name":"uboot","offset":1048576,"size":3145728},

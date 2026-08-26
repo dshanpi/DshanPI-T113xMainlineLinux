@@ -68,6 +68,8 @@ pub struct FlashOptions {
 #[derive(Debug, Clone)]
 pub struct NandConstraints {
     pub expected_capacity_bytes: u64,
+    pub minimum_logical_sectors: u64,
+    pub allow_unavailable_capacity: bool,
     pub expected_partitions: Vec<String>,
     pub expected_ubifs_partition: Option<String>,
     pub exact_bus: u8,
