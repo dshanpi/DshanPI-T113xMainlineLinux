@@ -14,3 +14,4 @@ validate:
 
 all:
 	./scripts/build-and-package.sh
+	./scripts/validate-local.py

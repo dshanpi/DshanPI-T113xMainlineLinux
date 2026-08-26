@@ -81,6 +81,28 @@ def verify_checksum_file(manifest: Path, directory: Path) -> None:
         require(digest(path) == expected, f"SHA-256 mismatch: {path.name}")
 
 
+def verify_evidence_manifest(manifest: Path) -> None:
+    entries: dict[str, str] = {}
+    for number, line in enumerate(manifest.read_text().splitlines(), 1):
+        fields = line.split(None, 1)
+        require(len(fields) == 2, f"malformed manifest line {number}")
+        checksum, name = fields
+        require(re.fullmatch(r"[0-9a-f]{64}", checksum) is not None,
+                f"invalid SHA-256 on line {number}")
+        require(name not in entries, f"duplicate artifact: {name}")
+        entries[name] = checksum
+    required = {
+        "boot.itb",
+        "fel-installer.itb",
+        "fel-sunxi-spl.bin",
+        "fel-u-boot.bin",
+        "spl-redundant.bin",
+        "sys.ubi",
+        "uboot-redundant.bin",
+    }
+    require(required.issubset(entries), "candidate evidence manifest is incomplete")
+
+
 def verify_payload() -> None:
     with tempfile.TemporaryDirectory(prefix="t113-payload-verify-") as temp:
         target = Path(temp)
@@ -199,10 +221,17 @@ def main() -> int:
         check(f"T{next_id:03d}", f"shell syntax: {path.relative_to(ROOT)}", lambda path=path: command("sh", "-n", str(path)))
         next_id += 1
 
-    python_files = [ROOT / "scripts/make-openix-plan.py", ROOT / "board/dshanpi/t113s3pro/verify-mainline-uboot.py", Path(__file__)]
+    python_files = sorted((ROOT / "scripts").glob("*.py")) + [ROOT / "board/dshanpi/t113s3pro/verify-mainline-uboot.py"]
     for path in python_files:
         check(f"T{next_id:03d}", f"Python syntax: {path.relative_to(ROOT)}", lambda path=path: ast.parse(path.read_text()))
         next_id += 1
+
+    check(
+        f"T{next_id:03d}",
+        "host workflow helper unit tests",
+        lambda: command(sys.executable, str(ROOT / "scripts/test-workflow-helpers.py")),
+    )
+    next_id += 1
 
     verifier = ROOT / "board/dshanpi/t113s3pro/verify-mainline-uboot.py"
     check(f"T{next_id:03d}", "SPL and U-Boot proper pass same-build verifier", lambda: command(
@@ -218,7 +247,7 @@ def main() -> int:
         and "@@ -0,0 +1,16 @@" in (ROOT / "board/dshanpi/t113s3pro/patches/uboot/0002-sunxi-add-dshanpi-t113s3pro-spinand-target.patch").read_text(),
         "UART3 console index missing from built config or permanent patch")); next_id += 1
     check(f"T{next_id:03d}", "FEL artifact checksums verify", lambda: verify_checksum_file(ARTIFACTS / "FEL_SHA256SUMS", ARTIFACTS)); next_id += 1
-    check(f"T{next_id:03d}", "source-recovery candidate checksums verify", lambda: verify_checksum_file(ROOT / "manifests/source-recovery-candidate-20260825.sha256", ARTIFACTS)); next_id += 1
+    check(f"T{next_id:03d}", "source-recovery candidate evidence manifest is complete", lambda: verify_evidence_manifest(ROOT / "manifests/source-recovery-candidate-20260825.sha256")); next_id += 1
     check(f"T{next_id:03d}", "payload archive membership and internal hashes verify", verify_payload); next_id += 1
     check(f"T{next_id:03d}", "eight redundant SPL eraseblock copies verify", verify_redundant_spl); next_id += 1
     check(f"T{next_id:03d}", "U-Boot redundant image is exactly 4 MiB", lambda: require((ARTIFACTS / "uboot-redundant.bin").stat().st_size == 4 * 1024 * 1024, "wrong U-Boot partition image size")); next_id += 1
@@ -257,7 +286,10 @@ def main() -> int:
     check(f"T{next_id:03d}", "recovery candidate and failed manifests remain distinct", lambda: require((ROOT / "manifests/source-recovery-candidate-20260825.sha256").read_text() != (ROOT / "manifests/clean-build-20260825.sha256").read_text(), "candidate reused failed artifacts")); next_id += 1
     check(f"T{next_id:03d}", "no Python bytecode is tracked", lambda: require(not command("git", "ls-files").strip().endswith(".pyc") and not any(line.endswith(".pyc") for line in command("git", "ls-files").splitlines()), "tracked bytecode")); next_id += 1
 
-    print(f"SUMMARY pass={passed} fail={failed} hardware_current_build=failed-do-not-use")
+    print(
+        f"SUMMARY pass={passed} fail={failed} "
+        "hardware_verified_bundle=verified source_recovery_candidate=hardware-pending"
+    )
     return 1 if failed else 0
 
 

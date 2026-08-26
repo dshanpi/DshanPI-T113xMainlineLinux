@@ -43,8 +43,10 @@ has passed this complete gate twice. The later clean repository rebuild is
 internally valid but failed to start its RAM installer on hardware and is
 explicitly `failed-do-not-use`. See
 [`docs/verification-status.md`](docs/verification-status.md) before selecting
-any artifact. Source reproducibility recovery is still in progress; this
-feature branch is a development/evidence backup, not a manufacturing release.
+any artifact. The UART3 patch-loss root cause has since been repaired and a new
+source-recovery candidate passes all local gates, but that exact candidate is
+still hardware-pending. This feature branch remains a development/evidence
+backup, not a manufacturing release.
 
 ## Build
 
@@ -53,7 +55,8 @@ Ubuntu/Debian host prerequisites include Git, Make, GCC, Python 3, `cpio`,
 space for a complete cross-build.
 
 ```sh
-git clone https://github.com/dshanpi/DshanPI-T113xMainlineLinux.git
+git clone -b feat/t113s3pro-mainline \
+  https://github.com/dshanpi/DshanPI-T113xMainlineLinux.git
 cd DshanPI-T113xMainlineLinux
 make all
 ```
@@ -65,20 +68,41 @@ make all
 3. downloads checksum-verified Linux 6.18.8 and U-Boot 2026.07 sources;
 4. builds the toolchain, U-Boot, kernel, DTB and UBIFS root filesystem;
 5. builds the self-contained mainline Linux RAM installer;
-6. emits the bounded FEL artifact bundle under `out/t113s3pro-mainline-fel`.
+6. emits the bounded FEL artifact bundle under `out/t113s3pro-mainline-fel`;
+7. runs all repository and artifact validation gates.
 
 The exact source versions and archive hashes are recorded in
 [`manifests/sources.lock`](manifests/sources.lock).
 
 ## Flash
 
-Build OpenixCLI from the companion repository, connect the board in FEL mode,
-and use the stable location reported by `openixcli scan`:
+For a clean two-repository build, clone both feature branches beside each other:
+
+```sh
+git clone -b feat/mainline-fel-ram-installer \
+  https://github.com/100askTeam/OpenixCLI.git
+git clone -b feat/t113s3pro-mainline \
+  https://github.com/dshanpi/DshanPI-T113xMainlineLinux.git
+cd DshanPI-T113xMainlineLinux
+./scripts/build-everything.sh
+```
+
+Connect the board in FEL mode and keep the independent UART3 adapter available.
+With exactly one Allwinner device attached, the workflow can select its physical
+USB endpoint automatically and wait for board-side installer plus reboot evidence:
+
+```sh
+OPENIXCLI_BIN=../OpenixCLI/target/release/openixcli \
+  ./scripts/flash-and-monitor.sh \
+  ./out/t113s3pro-mainline-fel auto /dev/ttyACM0 300
+```
+
+For FEL RAM handoff only, without UART acceptance monitoring:
 
 ```sh
 ./scripts/flash-mainline-fel.sh \
   ./out/t113s3pro-mainline-fel \
-  libusb:3:2
+  auto
 ```
 
 Do not disconnect USB, UART or power while the installer is active. A complete
@@ -92,6 +116,10 @@ success requires all of the following:
 - a real power cycle reaches `t113s3pro-mainline login:` without manual U-Boot
   commands.
 
+`flash-and-monitor.sh` proves installer completion followed by a reboot to the
+login prompt. It does not claim a power-off cold boot. Release qualification
+still requires a controlled power-off interval and a fresh UART capture.
+
 ## Documentation
 
 - [Hardware facts](docs/hardware.md)
@@ -102,6 +130,7 @@ success requires all of the following:
 - [Development journal](docs/development-journal.md)
 - [Verification status](docs/verification-status.md)
 - [Troubleshooting](docs/troubleshooting.md)
+- [Automated two-repository workflow](docs/automated-workflow.md)
 - [Frozen FES experiments](docs/frozen-fes-experiments.md)
 - [Logs and evidence](logs/README.md)
 - [Latest line-by-line local validation](logs/local-validation-20260825.txt)

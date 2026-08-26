@@ -68,3 +68,26 @@ All T113/project-3 task rows were exported before cleanup. The public JSONL is
 path-sanitized. The unredacted SQLite database, complete local worktrees,
 remote build tree and every artifact iteration are retained in the private
 pre-clean archive described by its local `README.md` and `SHA256SUMS`.
+
+## Two-repository automation hardening
+
+After the first source publication audit, the workflow was tightened so a clean
+machine does not silently clone default branches or mistake FEL transfer for
+NAND success:
+
+1. all clone instructions name the two required feature branches;
+2. OpenixCLI pins libefex revision `3752e38ff8e69190c53cd43290a8102beab55e73`;
+3. OpenixCLI JSONL scan emits numeric USB identity and stable physical location;
+4. the mainline completion event is explicitly scoped to `fel_ram_handoff` and
+   reports `installerStatus=not_observed`;
+5. the board repository builds and tests both repositories through
+   `scripts/build-everything.sh`;
+6. automatic USB selection accepts exactly one Allwinner device and refuses
+   ambiguous candidates;
+7. the independent UART acceptance monitor requires board-side installer
+   completion before accepting a subsequent login prompt;
+8. warm-reboot acceptance and power-off cold-boot qualification are documented
+   as separate gates.
+
+These changes improve repeatability and reporting but do not change the NAND
+layout or promote the source-recovery candidate to hardware-verified status.

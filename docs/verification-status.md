@@ -61,3 +61,18 @@ protocol output and independent UART capture, then power-cycle the board.
 Acceptance requires the markers listed in [`../logs/README.md`](../logs/README.md).
 Do not automatically retry a terminal FEL failure; return the board to FEL
 manually and start a new task.
+
+## Source-recovery candidate
+
+The clean-build failure was traced to a malformed permanent U-Boot patch hunk:
+the hunk declared 15 added lines while containing 16, so the final
+`CONFIG_CONS_INDEX=4` line was not applied. Buildroot consequently selected
+UART0 even though the board console is UART3 PB6/PB7. Commit `d1eedf7` fixes the
+hunk and adds a validation gate for the built configuration and permanent patch.
+
+The resulting source-recovery candidate passes the repository gates and its key
+U-Boot board sources match the preserved successful build snapshot. Its hashes
+are recorded in `manifests/source-recovery-candidate-20260825.sha256`. This exact
+candidate remains `hardware-pending`; it must pass installer, reboot, and
+power-off cold-boot qualification before it replaces the preserved hardware
+baseline.
