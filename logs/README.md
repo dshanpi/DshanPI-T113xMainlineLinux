@@ -44,3 +44,7 @@ disproved the initial `flash_set_off` hypothesis and also stopped before erase.
 Tina source inspection established that command `0x020e` exposes UBI logical
 user capacity, which may be unavailable before layout creation, rather than raw
 chip capacity. Later rows must retain both failures rather than replacing them.
+The third attempt passed those gates and verified MBR, boot, and rootfs, then
+failed before Boot1/Boot0 because partition flash access had not been closed.
+It records the required `set_on` partition phase followed by `set_off` before
+the dedicated boot-component phase.

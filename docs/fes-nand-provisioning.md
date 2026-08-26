@@ -73,6 +73,13 @@ FES volume; zero is reported as unavailable and never presented as a detected
 256 MiB capacity. Storage type, board-specific loader, component identities,
 and exact MBR remain mandatory gates.
 
+FES flash access has two distinct phases. The host uses `flash_set_on` before
+the logical-capacity probe and keeps it active through MBR and ordinary
+partition transfer. Once those partitions are verified, it must issue
+`flash_set_off` before sending Boot1 and Boot0 through their dedicated FES
+component commands. Keeping partition access active causes the Boot1 command to
+fail with a USB protocol error.
+
 ## Safe workflow
 
 Host-only validation opens no USB:

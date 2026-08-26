@@ -140,3 +140,12 @@ contain the fixed FES layout through sector 99036 and must not exceed the pinned
 detected raw capacity. Board identity, storage type, loader identity, component
 hashes, and the exact MBR remain hard pre-erase gates. Per the no-retry rule,
 neither FES session was reused.
+
+The third manual-FEL attempt passed the corrected capacity policy, wrote and
+verified the exact MBR, then wrote and verified both `boot` and `rootfs`. The
+first Boot1 transfer returned a USB protocol error before Boot1 or Boot0 could
+be verified. This established the second half of the vendor lifecycle:
+`flash_set_on` must remain active for ordinary partition I/O, but
+`flash_set_off` is mandatory after partition verification and before the
+separate FES Boot1/Boot0 component commands. The partially provisioned device
+was left in FES and was not retried.
