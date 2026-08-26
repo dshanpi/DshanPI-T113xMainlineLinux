@@ -17,6 +17,7 @@ use std::io::Read;
 use std::path::{Component, Path, PathBuf};
 
 const ROUTE: &str = "fes_nand_components";
+const REQUIRED_BOOTSTRAP_MARKERS: [&str; 2] = ["mainline u-boot size", "mainline eGON SPL size"];
 
 pub fn error_code(message: &str) -> &str {
     message
@@ -50,6 +51,8 @@ pub struct Manifest {
 pub struct Artifact {
     pub file: String,
     pub sha256: String,
+    #[serde(default)]
+    pub required_markers: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -261,6 +264,11 @@ pub fn validate_manifest(path: &Path) -> anyhow::Result<ValidatedManifest> {
     if manifest.board.trim().is_empty() || manifest.soc.trim().is_empty() {
         bail!("NAND_MANIFEST_BOARD_AND_SOC_REQUIRED");
     }
+    if manifest.bootstrap.required_markers != REQUIRED_BOOTSTRAP_MARKERS.map(str::to_string)
+        || !manifest.firmware_package.required_markers.is_empty()
+    {
+        bail!("NAND_BOOTSTRAP_CAPABILITY_MARKERS_REQUIRED");
+    }
     if manifest.storage.kind != "spi-nand" && manifest.storage.kind != "nand" {
         bail!("NAND_MANIFEST_STORAGE_MUST_BE_NAND");
     }
@@ -454,9 +462,17 @@ pub async fn execute(args: NandComponentArgs) -> anyhow::Result<()> {
     bootstrap_packer
         .get_fes()
         .context("NAND_BOOTSTRAP_FES_REQUIRED")?;
-    bootstrap_packer
+    let bootstrap_uboot = bootstrap_packer
         .get_uboot()
         .context("NAND_BOOTSTRAP_UBOOT_REQUIRED")?;
+    for marker in &validated.manifest.bootstrap.required_markers {
+        if !bootstrap_uboot
+            .windows(marker.len())
+            .any(|window| window == marker.as_bytes())
+        {
+            bail!("NAND_BOOTSTRAP_CAPABILITY_MISSING:{marker}");
+        }
+    }
     bootstrap_packer
         .get_sys_config_bin()
         .context("NAND_BOOTSTRAP_SYS_CONFIG_REQUIRED")?;
@@ -648,7 +664,7 @@ mod tests {
             "route":ROUTE,
             "board":"dshanpi-t113s3pro",
             "soc":"r528",
-            "bootstrap":{"file":"bootstrap.img","sha256":digest(b"IMAGEWTY-bootstrap")},
+            "bootstrap":{"file":"bootstrap.img","sha256":digest(b"IMAGEWTY-bootstrap"),"requiredMarkers":["mainline u-boot size","mainline eGON SPL size"]},
             "firmwarePackage":{"file":"components.img","sha256":digest(b"IMAGEWTY-components")},
             "storage":{"kind":"spi-nand","capacityBytes":268435456u64,"pageSize":2048,"eraseSize":131072,"capacityProbePolicy":"fes-logical-or-unavailable"},
             "layout":{"version":"test-v1","partitions":[
