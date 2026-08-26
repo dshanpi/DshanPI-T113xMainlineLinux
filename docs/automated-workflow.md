@@ -2,30 +2,56 @@
 
 ## Contract
 
-The supported source workflow uses exactly these branches:
+The supported source workflow pins exact commits, not moving branch tips:
 
-- `100askTeam/OpenixCLI:feat/mainline-fel-ram-installer`;
-- `dshanpi/DshanPI-T113xMainlineLinux:feat/t113s3pro-mainline`.
+- OpenixCLI `de80fb95aabd3bd4f2afe1e355f9bc2f5bb94bca`;
+- this repository's tested `feat/fes-nand-components` revision.
 
-Clone the repositories beside each other. External upstream sources are not
-vendored: the board repository downloads checksum-pinned Buildroot, Linux, and
-U-Boot inputs, while OpenixCLI uses a revision-pinned libefex dependency.
+External upstream sources are not vendored. The board repository downloads and
+verifies the following immutable inputs:
+
+| Input | Version/revision | Official source |
+| --- | --- | --- |
+| Buildroot | `86102dd8279ac6c4c0244f3e490af98dc7460d5e` | `https://gitlab.com/buildroot.org/buildroot.git` |
+| Linux | `6.18.8` | `https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.8.tar.xz` |
+| U-Boot | `2026.07` | `https://ftp.denx.de/pub/u-boot/u-boot-2026.07.tar.bz2` |
+| OpenixCLI | `de80fb95aabd3bd4f2afe1e355f9bc2f5bb94bca` | `https://github.com/100askTeam/OpenixCLI.git` |
+
+Linux and U-Boot archives are verified against SHA-256 values in
+`manifests/sources.lock`. Buildroot and OpenixCLI are checked out by full Git
+commit. A URL, version, hash, missing key, or extra key mismatch fails closed.
 
 ## Build
 
 ```sh
-git clone -b feat/mainline-fel-ram-installer \
-  https://github.com/100askTeam/OpenixCLI.git
-git clone -b feat/t113s3pro-mainline \
+git clone -b feat/fes-nand-components \
   https://github.com/dshanpi/DshanPI-T113xMainlineLinux.git
 cd DshanPI-T113xMainlineLinux
-./scripts/build-everything.sh
+./scripts/one-click-build.sh
 ```
 
-`build-everything.sh` refuses missing host tools, runs the locked OpenixCLI test
-suite, builds its release binary, builds every board artifact, packages the FEL
-RAM installer, and executes the local acceptance gates. Set `OPENIXCLI_DIR` only
-when the companion repository is not the normal sibling directory.
+The script automatically clones the pinned OpenixCLI commit into `.deps/` when
+there is no sibling checkout. It refuses missing host tools, a dirty explicitly
+selected OpenixCLI checkout, or a revision mismatch. It then runs the locked
+OpenixCLI tests, builds its release binary, builds every board artifact, packages
+the FEL RAM installer, and executes all local acceptance gates.
+
+The mainline source build is completely automatic. Creating the formal FES NAND
+container additionally requires Allwinner/Tina packaging tools and a board loader
+whose redistribution license is not present in this repository. Supply authorized
+local inputs without copying them into Git:
+
+```sh
+TINA_SDK=/absolute/path/to/authorized/Tina-SDK \
+FES_BOOTSTRAP_LOADER=/absolute/path/to/authorized/loader.img \
+./scripts/one-click-build.sh
+```
+
+With both variables, the script also builds the FES component package, creates a
+hash-pinned closed bundle, and runs OpenixCLI's no-USB preflight. It never starts
+a media write automatically. Without them, only this licensed packaging stage is
+reported as skipped; U-Boot, Linux, Buildroot, rootfs, FIT images, recovery bundle,
+OpenixCLI, and their validation are still built completely.
 
 ## Flash and warm-reboot acceptance
 

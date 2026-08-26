@@ -1,6 +1,10 @@
-BUILDROOT_GIT_URL=https://github.com/buildroot/buildroot.git
+BUILDROOT_GIT_URL=https://gitlab.com/buildroot.org/buildroot.git
 BUILDROOT_COMMIT=86102dd8279ac6c4c0244f3e490af98dc7460d5e
 LINUX_VERSION=6.18.8
+LINUX_ARCHIVE_URL=https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.8.tar.xz
 LINUX_ARCHIVE_SHA256=37f0c5d5c242c1d604e87d48f08795e861a5a85f725b4ca11d0a538f12ff8cff
 UBOOT_VERSION=2026.07
+UBOOT_ARCHIVE_URL=https://ftp.denx.de/pub/u-boot/u-boot-2026.07.tar.bz2
 UBOOT_ARCHIVE_SHA256=78e8bfc382fe388f9b55aa1daf8c563522a037779b5d4c349d1415e381f1243e
+OPENIXCLI_GIT_URL=https://github.com/100askTeam/OpenixCLI.git
+OPENIXCLI_COMMIT=de80fb95aabd3bd4f2afe1e355f9bc2f5bb94bca

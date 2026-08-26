@@ -70,36 +70,47 @@ Ubuntu/Debian host prerequisites include Git, Make, GCC, Python 3, `cpio`,
 space for a complete cross-build.
 
 ```sh
-git clone -b feat/t113s3pro-mainline \
+git clone -b feat/fes-nand-components \
   https://github.com/dshanpi/DshanPI-T113xMainlineLinux.git
 cd DshanPI-T113xMainlineLinux
-make all
+./scripts/one-click-build.sh
 ```
 
-`make all` performs the following operations:
+The one-click script performs the following operations:
 
-1. clones the pinned Buildroot tree;
+1. clones the pinned OpenixCLI and Buildroot trees;
 2. installs the DshanPi defconfig and board support;
-3. downloads checksum-verified Linux 6.18.8 and U-Boot 2026.07 sources;
+3. downloads Linux 6.18.8 from kernel.org and U-Boot 2026.07 from DENX, then verifies their pinned SHA-256 values;
 4. builds the toolchain, U-Boot, kernel, DTB and UBIFS root filesystem;
 5. builds the self-contained mainline Linux RAM installer;
-6. emits the bounded FEL artifact bundle under `out/t113s3pro-mainline-fel`;
-7. runs all repository and artifact validation gates.
+6. tests and builds the pinned OpenixCLI release binary;
+7. emits the bounded FEL artifact bundle under `out/t113s3pro-mainline-fel`;
+8. runs all repository, source-lock and artifact validation gates.
 
 The exact source versions and archive hashes are recorded in
 [`manifests/sources.lock`](manifests/sources.lock).
 
-## Flash
-
-For a clean two-repository build, clone both feature branches beside each other:
+For the formal FES NAND package, pass authorized local Tina packaging tools and
+the board-specific RAM loader:
 
 ```sh
-git clone -b feat/mainline-fel-ram-installer \
-  https://github.com/100askTeam/OpenixCLI.git
-git clone -b feat/t113s3pro-mainline \
-  https://github.com/dshanpi/DshanPI-T113xMainlineLinux.git
-cd DshanPI-T113xMainlineLinux
-./scripts/build-everything.sh
+TINA_SDK=/absolute/path/to/authorized/Tina-SDK \
+FES_BOOTSTRAP_LOADER=/absolute/path/to/authorized/loader.img \
+./scripts/one-click-build.sh
+```
+
+Those two inputs are not downloadable public dependencies in this repository and
+are never committed because their redistribution permission is not established.
+The script builds everything else without them and clearly reports only the FES
+packaging stage as skipped. Building never writes a connected board.
+
+## Flash
+
+The one-repository workflow above obtains the pinned OpenixCLI automatically. An
+existing exact OpenixCLI checkout can instead be selected explicitly:
+
+```sh
+OPENIXCLI_DIR=/absolute/path/to/OpenixCLI ./scripts/one-click-build.sh
 ```
 
 Connect the board in FEL mode and keep the independent UART3 adapter available.

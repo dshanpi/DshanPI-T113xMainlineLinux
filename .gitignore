@@ -1,5 +1,6 @@
 /buildroot/
 /out/
+/.deps/
 __pycache__/
 *.py[cod]
 .validation-plan.json

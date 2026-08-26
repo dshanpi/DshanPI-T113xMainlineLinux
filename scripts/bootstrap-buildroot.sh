@@ -2,6 +2,7 @@
 set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+python3 "${ROOT}/scripts/source_lock.py" "${ROOT}/manifests/sources.lock"
 . "${ROOT}/manifests/sources.lock"
 TREE="${ROOT}/buildroot/buildroot-mainline"
 
@@ -15,6 +16,8 @@ if [ ! -d "${TREE}/.git" ]; then
 	mkdir -p "${ROOT}/buildroot"
 	git clone --filter=blob:none --no-checkout "${BUILDROOT_GIT_URL}" "${TREE}"
 fi
+
+git -C "${TREE}" remote set-url origin "${BUILDROOT_GIT_URL}"
 
 current="$(git -C "${TREE}" rev-parse HEAD)"
 if [ "${current}" != "${BUILDROOT_COMMIT}" ]; then

@@ -15,6 +15,8 @@ import sys
 import tarfile
 import tempfile
 
+from source_lock import load_source_lock, validate_source_lock
+
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "out/mainline/t113s3pro"
@@ -65,11 +67,8 @@ def require(condition: bool, message: str) -> None:
 
 
 def source_lock() -> dict[str, str]:
-    entries = {}
-    for line in (ROOT / "manifests/sources.lock").read_text().splitlines():
-        if line and not line.startswith("#"):
-            key, value = line.split("=", 1)
-            entries[key] = value
+    entries = load_source_lock(ROOT / "manifests/sources.lock")
+    validate_source_lock(entries)
     return entries
 
 
@@ -286,6 +285,10 @@ def main() -> int:
         ("T004", "Buildroot checkout matches source lock", lambda: require(command("git", "rev-parse", "HEAD", cwd=BUILDROOT).strip() == lock["BUILDROOT_COMMIT"], "Buildroot HEAD mismatch")),
         ("T005", "Linux archive hash is pinned", lambda: require(re.fullmatch(r"[0-9a-f]{64}", lock.get("LINUX_ARCHIVE_SHA256", "")) is not None, "invalid Linux hash")),
         ("T006", "U-Boot archive hash is pinned", lambda: require(re.fullmatch(r"[0-9a-f]{64}", lock.get("UBOOT_ARCHIVE_SHA256", "")) is not None, "invalid U-Boot hash")),
+        ("T007", "Buildroot uses the official GitLab repository", lambda: require(lock["BUILDROOT_GIT_URL"] == "https://gitlab.com/buildroot.org/buildroot.git", "wrong Buildroot URL")),
+        ("T008", "Linux uses the exact official kernel.org archive", lambda: require(lock["LINUX_ARCHIVE_URL"] == "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.8.tar.xz", "wrong Linux URL")),
+        ("T009", "U-Boot uses the exact official DENX archive", lambda: require(lock["UBOOT_ARCHIVE_URL"] == "https://ftp.denx.de/pub/u-boot/u-boot-2026.07.tar.bz2", "wrong U-Boot URL")),
+        ("T010", "OpenixCLI source and full revision are pinned", lambda: require(lock["OPENIXCLI_GIT_URL"] == "https://github.com/100askTeam/OpenixCLI.git" and lock["OPENIXCLI_COMMIT"] == "de80fb95aabd3bd4f2afe1e355f9bc2f5bb94bca", "wrong OpenixCLI source")),
     ]
     for item in checks:
         check(*item)
@@ -301,14 +304,18 @@ def main() -> int:
         "scripts/replace-imagewty-entry.py",
         "scripts/flash-fes-nand.sh",
         "scripts/package-fes-components.sh",
+        "scripts/source_lock.py",
+        "scripts/fetch-pinned-sources.py",
+        "scripts/test-source-workflow.py",
+        "scripts/one-click-build.sh",
         "docs/fes-nand-provisioning.md",
         "logs/fes-host-validation-20260826.jsonl",
     ]
-    for index, name in enumerate(required, 7):
+    for index, name in enumerate(required, 11):
         check(f"T{index:03d}", f"required source exists: {name}", lambda name=name: require((ROOT / name).is_file(), "missing source"))
 
     shell_files = sorted((ROOT / "scripts").glob("*.sh")) + sorted((ROOT / "board/dshanpi/t113s3pro").glob("*.sh")) + [ROOT / "board/dshanpi/t113s3pro/installer-init"]
-    next_id = 7 + len(required)
+    next_id = 11 + len(required)
     for path in shell_files:
         check(f"T{next_id:03d}", f"shell syntax: {path.relative_to(ROOT)}", lambda path=path: command("sh", "-n", str(path)))
         next_id += 1
@@ -335,6 +342,12 @@ def main() -> int:
         f"T{next_id:03d}",
         "host workflow helper unit tests",
         lambda: command(sys.executable, str(ROOT / "scripts/test-workflow-helpers.py")),
+    )
+    next_id += 1
+    check(
+        f"T{next_id:03d}",
+        "pinned-source parser, URL and checksum unit tests",
+        lambda: command(sys.executable, str(ROOT / "scripts/test-source-workflow.py")),
     )
     next_id += 1
 

@@ -1,4 +1,4 @@
-.PHONY: bootstrap build package validate all fes-preflight
+.PHONY: bootstrap build package validate all one-click fes-preflight
 
 bootstrap:
 	./scripts/bootstrap-buildroot.sh
@@ -15,6 +15,9 @@ validate:
 all:
 	./scripts/build-and-package.sh
 	./scripts/validate-local.py
+
+one-click:
+	./scripts/one-click-build.sh
 
 # FES media writes are deliberately not a Make target. This gate opens no USB.
 fes-preflight:
