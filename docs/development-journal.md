@@ -90,4 +90,9 @@ NAND success:
    as separate gates.
 
 These changes improve repeatability and reporting but do not change the NAND
-layout or promote the source-recovery candidate to hardware-verified status.
+layout. After the automation changes, the rebuilt source candidate was loaded
+in task `mainline-1787715829104265529`. The Linux installer wrote and verified
+the complete NAND layout, rebooted into UBIFS, and reached the login prompt.
+Two subsequent Lynx Power cycles with at least two seconds fully off also
+reached the login prompt. The source-recovery candidate was therefore promoted
+to `hardware-verified` for the tested T113S3 Pro/W25N02KV combination.

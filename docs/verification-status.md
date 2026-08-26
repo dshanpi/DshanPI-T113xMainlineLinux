@@ -73,6 +73,17 @@ hunk and adds a validation gate for the built configuration and permanent patch.
 The resulting source-recovery candidate passes the repository gates and its key
 U-Boot board sources match the preserved successful build snapshot. Its hashes
 are recorded in `manifests/source-recovery-candidate-20260825.sha256`. This exact
-candidate remains `hardware-pending`; it must pass installer, reboot, and
-power-off cold-boot qualification before it replaces the preserved hardware
-baseline.
+candidate passed hardware qualification on 2026-08-25. Lynx task
+`mainline-1787715829104265529` transferred the newly rebuilt artifacts, observed
+the board-side installer through completion at 100%, and returned exit code 0.
+The board then reached the mainline login prompt after the installer reboot.
+Lynx Power device 5/channel 6 subsequently performed two controlled power-off
+cycles (at least two seconds each); both cold boots mounted the `sys/rootfs`
+UBIFS and reached `t113s3pro-mainline login:`.
+
+The promoted artifact hashes are recorded in
+`manifests/hardware-verified-source-rebuild-20260825.sha256`; sanitized task,
+power and marker evidence is in
+`logs/source-rebuild-hardware-validation-20260825.jsonl`. This closes the source
+recovery gate for the tested board/NAND combination. It does not convert the RAM
+installer into a general manufacturing provisioning guarantee.

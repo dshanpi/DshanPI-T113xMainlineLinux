@@ -284,11 +284,19 @@ def main() -> int:
     check(f"T{next_id:03d}", "published logs contain no local workspace path", lambda: require("/home/" not in task_log + cold_log, "unsanitized workspace path")); next_id += 1
     check(f"T{next_id:03d}", "hardware and clean-build manifests remain distinct", lambda: require((ROOT / "manifests/verified-hardware-artifacts.sha256").read_text() != (ROOT / "manifests/clean-build-20260825.sha256").read_text(), "manifests unexpectedly identical")); next_id += 1
     check(f"T{next_id:03d}", "recovery candidate and failed manifests remain distinct", lambda: require((ROOT / "manifests/source-recovery-candidate-20260825.sha256").read_text() != (ROOT / "manifests/clean-build-20260825.sha256").read_text(), "candidate reused failed artifacts")); next_id += 1
+    check(f"T{next_id:03d}", "hardware-verified source rebuild manifest is complete", lambda: verify_evidence_manifest(ROOT / "manifests/hardware-verified-source-rebuild-20260825.sha256")); next_id += 1
+    rebuild_rows = (ROOT / "logs/source-rebuild-hardware-validation-20260825.jsonl").read_text().splitlines()
+    check(f"T{next_id:03d}", "source rebuild hardware evidence has installer and two cold boots", lambda: require(
+        len(rebuild_rows) == 9
+        and all(json.loads(row) for row in rebuild_rows)
+        and '"taskId":"mainline-1787715829104265529"' in rebuild_rows[1]
+        and sum('"cold-boot-pass"' in row for row in rebuild_rows) == 2,
+        "source rebuild hardware evidence incomplete")); next_id += 1
     check(f"T{next_id:03d}", "no Python bytecode is tracked", lambda: require(not command("git", "ls-files").strip().endswith(".pyc") and not any(line.endswith(".pyc") for line in command("git", "ls-files").splitlines()), "tracked bytecode")); next_id += 1
 
     print(
         f"SUMMARY pass={passed} fail={failed} "
-        "hardware_verified_bundle=verified source_recovery_candidate=hardware-pending"
+        "hardware_verified_bundle=verified source_rebuild=hardware-verified"
     )
     return 1 if failed else 0
 

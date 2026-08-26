@@ -56,5 +56,7 @@
 [PASS] T056 published logs contain no local workspace path
 [PASS] T057 hardware and clean-build manifests remain distinct
 [PASS] T058 recovery candidate and failed manifests remain distinct
-[PASS] T059 no Python bytecode is tracked
-SUMMARY pass=59 fail=0 hardware_verified_bundle=verified source_recovery_candidate=hardware-pending
+[PASS] T059 hardware-verified source rebuild manifest is complete
+[PASS] T060 source rebuild hardware evidence has installer and two cold boots
+[PASS] T061 no Python bytecode is tracked
+SUMMARY pass=61 fail=0 hardware_verified_bundle=verified source_rebuild=hardware-verified

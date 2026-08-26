@@ -45,8 +45,10 @@ explicitly `failed-do-not-use`. See
 [`docs/verification-status.md`](docs/verification-status.md) before selecting
 any artifact. The UART3 patch-loss root cause has since been repaired and a new
 source-recovery candidate passes all local gates, but that exact candidate is
-still hardware-pending. This feature branch remains a development/evidence
-backup, not a manufacturing release.
+now hardware-verified by a complete installer, warm reboot and two controlled
+power-off cold boots. The exact hashes are in
+`manifests/hardware-verified-source-rebuild-20260825.sha256`. This feature branch
+remains a development/recovery release rather than a manufacturing NAND claim.
 
 ## Build
 
