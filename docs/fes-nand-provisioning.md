@@ -65,6 +65,14 @@ an older but syntactically valid component image from being written by mistake.
 The same preflight checks the expected file signatures for eGON Boot0, legacy
 U-Boot Boot1, FIT, and UBIFS before it accepts their hashes.
 
+T113 FES command `0x020e` returns the current UBI user logical area, not raw
+SPI-NAND chip capacity. It can legally return zero before a usable UBI layout
+exists. The manifest therefore declares `fes-logical-or-unavailable`: a
+non-zero result must fit the raw-capacity upper bound and contain every fixed
+FES volume; zero is reported as unavailable and never presented as a detected
+256 MiB capacity. Storage type, board-specific loader, component identities,
+and exact MBR remain mandatory gates.
+
 ## Safe workflow
 
 Host-only validation opens no USB:

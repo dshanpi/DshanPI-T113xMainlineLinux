@@ -105,6 +105,8 @@ def verify_evidence_manifest(manifest: Path) -> None:
 
 def verify_fes_schema_layout() -> None:
     schema = json.loads((ROOT / "manifests/fes-nand-components.schema.json").read_text())
+    policy = schema["properties"]["storage"]["properties"]["capacityProbePolicy"]["const"]
+    require(policy == "fes-logical-or-unavailable", "wrong NAND capacity probe semantics")
     physical = schema["properties"]["layout"]["properties"]["partitions"]["const"]
     require(
         physical == [

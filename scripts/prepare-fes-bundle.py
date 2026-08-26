@@ -73,6 +73,7 @@ def main() -> None:
             "capacityBytes": 268435456,
             "pageSize": 2048,
             "eraseSize": 131072,
+            "capacityProbePolicy": "fes-logical-or-unavailable",
         },
         "layout": {
             "version": "t113s3pro-mainline-v1",

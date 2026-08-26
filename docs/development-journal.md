@@ -125,9 +125,18 @@ hardware status. The exact host evidence is recorded in
 `logs/fes-host-validation-20260826.jsonl`.
 
 The first hardware execution reached FES and correctly identified SPI-NAND,
-then stopped before erase because the capacity query returned zero. libefex's
-own FES test established the missing sequence: select the detected storage type
-with `flash_set_off`, then probe capacity. The partition path had also used a
-hard-coded storage type zero instead of SPI-NAND type five. Both transitions
-were corrected in OpenixCLI. Per the no-retry rule, the same FES session was
-not reused; a new manual FEL entry is required for the next attempt.
+then stopped before erase because the capacity query returned zero. The first
+hypothesis was that the detected storage type had to be selected with
+`flash_set_off`; a second manual-FEL attempt disproved it and again stopped
+before erase. Direct inspection of Tina's `usb_efex.c` and SPI-NAND backend
+showed that `flash_set_off` deinitializes sprite, while FES command `0x020e`
+returns the current UBI logical user-volume size rather than raw chip capacity.
+That value may legally be zero before a usable layout exists.
+
+The formal policy now initializes SPI-NAND with `flash_set_on` and treats the
+probe as logical capacity or explicitly unavailable. A nonzero value must
+contain the fixed FES layout through sector 99036 and must not exceed the pinned
+256 MiB raw bound. Zero is logged as unavailable and is never presented as a
+detected raw capacity. Board identity, storage type, loader identity, component
+hashes, and the exact MBR remain hard pre-erase gates. Per the no-retry rule,
+neither FES session was reused.

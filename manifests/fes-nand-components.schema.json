@@ -15,12 +15,13 @@
     "storage": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["kind", "capacityBytes", "pageSize", "eraseSize"],
+      "required": ["kind", "capacityBytes", "pageSize", "eraseSize", "capacityProbePolicy"],
       "properties": {
         "kind": {"const": "spi-nand"},
         "capacityBytes": {"const": 268435456},
         "pageSize": {"const": 2048},
-        "eraseSize": {"const": 131072}
+        "eraseSize": {"const": 131072},
+        "capacityProbePolicy": {"const": "fes-logical-or-unavailable"}
       }
     },
     "layout": {
