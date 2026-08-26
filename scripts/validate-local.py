@@ -103,6 +103,32 @@ def verify_evidence_manifest(manifest: Path) -> None:
     require(required.issubset(entries), "candidate evidence manifest is incomplete")
 
 
+def verify_fes_schema_layout() -> None:
+    schema = json.loads((ROOT / "manifests/fes-nand-components.schema.json").read_text())
+    physical = schema["properties"]["layout"]["properties"]["partitions"]["const"]
+    require(
+        physical == [
+            {"name": "spl", "offset": 0, "size": 1048576},
+            {"name": "uboot", "offset": 1048576, "size": 3145728},
+            {"name": "secure-storage", "offset": 4194304, "size": 1048576},
+            {"name": "sys", "offset": 5242880, "size": 263192576},
+        ],
+        "physical NAND layout is not exactly pinned",
+    )
+    actual = schema["properties"]["layout"]["properties"]["fesPartitions"]["const"]
+    expected = [
+        {"name": "boot", "addressSectors": 504, "sizeSectors": 16632},
+        {"name": "rootfs", "addressSectors": 17136, "sizeSectors": 81900},
+        {"name": "UDISK", "addressSectors": 99036, "sizeSectors": 0},
+    ]
+    require(actual == expected, "FES MBR layout is not exactly pinned")
+    content_types = schema["$defs"]["component"]["properties"]["contentType"]["enum"]
+    require(
+        content_types == ["egon-boot0", "legacy-uboot", "fit", "ubifs"],
+        "FES component content types are not pinned",
+    )
+
+
 def verify_payload() -> None:
     with tempfile.TemporaryDirectory(prefix="t113-payload-verify-") as temp:
         target = Path(temp)
@@ -111,8 +137,8 @@ def verify_payload() -> None:
             expected = {
                 "spl-redundant.bin",
                 "uboot-redundant.bin",
-                "boot.itb",
                 "sys.ubi",
+                "BOOT_VOLUME",
                 "SHA256SUMS",
             }
             require(names == expected, f"unexpected payload members: {sorted(names)}")
@@ -193,6 +219,18 @@ def verify_revalidation_json() -> None:
             "cold power cycle is incomplete")
 
 
+def verify_fes_host_log() -> None:
+    path = ROOT / "logs/fes-host-validation-20260826.jsonl"
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    require(len(rows) == 5, "unexpected FES host evidence row count")
+    require(rows[0]["status"] == "experimental-pending-cold-boot", "wrong FES status")
+    require(rows[2]["bootstrapRolesVerified"] is True, "bootstrap roles not verified")
+    require(rows[2]["embeddedComponentsVerified"] is True, "components not verified")
+    require(rows[3]["eraseAttempted"] is False, "no-device gate attempted erase")
+    require(rows[4]["passed"] == 75 and rows[4]["failed"] == 0, "wrong local gate result")
+    require(rows[4]["currentFesLayoutHardwareStatus"] == "pending", "hardware status overstated")
+
+
 def main() -> int:
     lock = source_lock()
     checks = [
@@ -211,15 +249,35 @@ def main() -> int:
         "board/dshanpi/t113s3pro/uboot.fragment",
         "configs/dshanpi_t113s3pro_nand_defconfig",
         "board/dshanpi/t113s3pro/installer-init",
+        "manifests/fes-nand-components.schema.json",
+        "manifests/retired-fes-artifacts.txt",
+        "scripts/prepare-fes-bundle.py",
+        "scripts/flash-fes-nand.sh",
+        "scripts/package-fes-components.sh",
+        "docs/fes-nand-provisioning.md",
+        "logs/fes-host-validation-20260826.jsonl",
     ]
     for index, name in enumerate(required, 7):
         check(f"T{index:03d}", f"required source exists: {name}", lambda name=name: require((ROOT / name).is_file(), "missing source"))
 
     shell_files = sorted((ROOT / "scripts").glob("*.sh")) + sorted((ROOT / "board/dshanpi/t113s3pro").glob("*.sh")) + [ROOT / "board/dshanpi/t113s3pro/installer-init"]
-    next_id = 11
+    next_id = 7 + len(required)
     for path in shell_files:
         check(f"T{next_id:03d}", f"shell syntax: {path.relative_to(ROOT)}", lambda path=path: command("sh", "-n", str(path)))
         next_id += 1
+
+    check(
+        f"T{next_id:03d}",
+        "FES NAND manifest schema is valid JSON",
+        lambda: json.loads((ROOT / "manifests/fes-nand-components.schema.json").read_text()),
+    )
+    next_id += 1
+    check(
+        f"T{next_id:03d}",
+        "FES NAND manifest pins exact boot/rootfs/UDISK sectors",
+        verify_fes_schema_layout,
+    )
+    next_id += 1
 
     python_files = sorted((ROOT / "scripts").glob("*.py")) + [ROOT / "board/dshanpi/t113s3pro/verify-mainline-uboot.py"]
     for path in python_files:
@@ -250,7 +308,7 @@ def main() -> int:
     check(f"T{next_id:03d}", "source-recovery candidate evidence manifest is complete", lambda: verify_evidence_manifest(ROOT / "manifests/source-recovery-candidate-20260825.sha256")); next_id += 1
     check(f"T{next_id:03d}", "payload archive membership and internal hashes verify", verify_payload); next_id += 1
     check(f"T{next_id:03d}", "eight redundant SPL eraseblock copies verify", verify_redundant_spl); next_id += 1
-    check(f"T{next_id:03d}", "U-Boot redundant image is exactly 4 MiB", lambda: require((ARTIFACTS / "uboot-redundant.bin").stat().st_size == 4 * 1024 * 1024, "wrong U-Boot partition image size")); next_id += 1
+    check(f"T{next_id:03d}", "U-Boot redundant image matches FES 3 MiB Boot1 reservation", lambda: require((ARTIFACTS / "uboot-redundant.bin").stat().st_size == 3 * 1024 * 1024, "wrong U-Boot partition image size")); next_id += 1
     check(f"T{next_id:03d}", "installer FIT stays below 8 MiB", lambda: require((ARTIFACTS / "fel-installer.itb").stat().st_size <= 8 * 1024 * 1024, "installer FIT too large")); next_id += 1
     check(f"T{next_id:03d}", "payload archive stays below 24 MiB", lambda: require((ARTIFACTS / "fel-payload.tar.gz").stat().st_size <= 24 * 1024 * 1024, "payload too large")); next_id += 1
     check(f"T{next_id:03d}", "OpenixCLI plan roles, hashes and ranges verify", verify_plan); next_id += 1
@@ -266,10 +324,17 @@ def main() -> int:
         and 'pins = "PB6", "PB7"' in pin_dtsi
         and 'function = "uart3"' in pin_dtsi,
         "UART3 pin mapping missing")); next_id += 1
-    check(f"T{next_id:03d}", "SPI-NAND fixed partition layout is present", lambda: require(all(name in dts for name in ('label = "spl"', 'label = "uboot"', 'label = "secure-storage"', 'label = "boot"', 'label = "sys"')), "partition layout incomplete")); next_id += 1
+    check(f"T{next_id:03d}", "SPI-NAND layout matches FES physical reservations", lambda: require(
+        all(name in dts for name in ('label = "spl"', 'label = "uboot"', 'label = "secure-storage"', 'label = "sys"', 'reg = <0x00500000 0x0fb00000>'))
+        and 'label = "boot"' not in dts,
+        "FES-compatible partition layout incomplete")); next_id += 1
+    check(f"T{next_id:03d}", "U-Boot loads FIT from the FES-created boot UBI volume", lambda: require(
+        "ubi part sys; ubi read 0x44000000 boot" in (ROOT / "board/dshanpi/t113s3pro/uboot.fragment").read_text(),
+        "UBI boot-volume command missing")); next_id += 1
     check(f"T{next_id:03d}", "Linux config enables SPI-NAND, UBI and UBIFS", lambda: require(all(item in (ROOT / "board/dshanpi/t113s3pro/linux.fragment").read_text() for item in ("CONFIG_MTD_SPI_NAND=y", "CONFIG_MTD_UBI=y", "CONFIG_UBIFS_FS=y")), "Linux NAND/UBI options missing")); next_id += 1
     check(f"T{next_id:03d}", "task history contains exactly 232 valid JSON rows", verify_log_json); next_id += 1
     check(f"T{next_id:03d}", "latest hardware revalidation JSONL is complete", verify_revalidation_json); next_id += 1
+    check(f"T{next_id:03d}", "FES host validation evidence is bounded and pending hardware", verify_fes_host_log); next_id += 1
     cold_log = (ROOT / "logs/final-cold-boot.log").read_text(errors="replace")
     markers = ["Trying to boot from sunxi SPI", "U-Boot 2026.07", "ubi0: attached mtd4", "VFS: Mounted root (ubifs filesystem)", "t113s3pro-mainline login:"]
     for marker in markers:
@@ -296,7 +361,7 @@ def main() -> int:
 
     print(
         f"SUMMARY pass={passed} fail={failed} "
-        "hardware_verified_bundle=verified source_rebuild=hardware-verified"
+        "historical_hardware_bundle=verified current_fes_layout=pending-hardware"
     )
     return 1 if failed else 0
 

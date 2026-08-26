@@ -90,7 +90,7 @@ diff --git a/dts/upstream/src/arm/allwinner/sun8i-t113s-dshanpi-t113s3pro.dts b/
 new file mode 100644
 --- /dev/null
 +++ b/dts/upstream/src/arm/allwinner/sun8i-t113s-dshanpi-t113s3pro.dts
-@@ -0,0 +1,142 @@
+@@ -0,0 +1,137 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/* Mainline U-Boot device tree for the DshanPi T113S3 Pro. */
 +
@@ -202,23 +202,18 @@ new file mode 100644
 +
 +			partition@100000 {
 +				label = "uboot";
-+				reg = <0x00100000 0x00400000>;
++				reg = <0x00100000 0x00300000>;
 +			};
 +
-+			partition@500000 {
++			partition@400000 {
 +				label = "secure-storage";
-+				reg = <0x00500000 0x00100000>;
++				reg = <0x00400000 0x00100000>;
 +				read-only;
 +			};
 +
-+			partition@600000 {
-+				label = "boot";
-+				reg = <0x00600000 0x00800000>;
-+			};
-+
-+			partition@e00000 {
++			partition@500000 {
 +				label = "sys";
-+				reg = <0x00e00000 0x0f200000>;
++				reg = <0x00500000 0x0fb00000>;
 +			};
 +		};
 +	};

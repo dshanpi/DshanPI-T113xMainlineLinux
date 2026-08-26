@@ -53,10 +53,10 @@ sed -e "s|@KERNEL@|${IMAGES_DIR}/zImage|" \
 	"${SCRIPT_DIR}/kernel-fit.its.in" > "${TMP_DIR}/kernel-fit.its"
 "${MKIMAGE}" -f "${TMP_DIR}/kernel-fit.its" "${OUTPUT_DIR}/boot.itb"
 
-# Build the physical layout consumed by the mainline device trees:
-# 1 MiB SPL, 4 MiB U-Boot, 1 MiB secure-storage, 8 MiB raw boot FIT,
-# then a 242 MiB Linux-owned UBI device.  Keeping the FIT outside UBI avoids
-# the incompatible U-Boot/Linux SPI-NAND OOB layouts while remaining mainline.
+# Build the physical layout shared by the mainline recovery installer and FES:
+# 1 MiB SPL, 3 MiB Boot1, 1 MiB secure-storage, then one 251 MiB UBI device.
+# FES creates the same boot/rootfs volumes inside sys, so both installation
+# routes leave an identical persistent mainline layout.
 # Repeating the eGON SPL once per eraseblock gives BootROM eight candidates.
 dd if=/dev/zero bs=1 count=1048576 status=none | tr '\000' '\377' \
 	> "${OUTPUT_DIR}/spl-redundant.bin"
@@ -64,16 +64,24 @@ for offset in 0 131072 262144 393216 524288 655360 786432 917504; do
 	dd if="${SPL}" of="${OUTPUT_DIR}/spl-redundant.bin" bs=1 \
 		seek="${offset}" conv=notrunc status=none
 done
-dd if=/dev/zero bs=1 count=4194304 status=none | tr '\000' '\377' \
+dd if=/dev/zero bs=1 count=3145728 status=none | tr '\000' '\377' \
 	> "${OUTPUT_DIR}/uboot-redundant.bin"
 dd if="${UBOOT_IMG}" of="${OUTPUT_DIR}/uboot-redundant.bin" \
 	conv=notrunc status=none
 
 cat > "${TMP_DIR}/sys-ubi.ini" <<EOF
+[boot]
+mode=ubi
+image=${OUTPUT_DIR}/boot.itb
+vol_id=0
+vol_type=static
+vol_name=boot
+vol_size=8388608
+
 [rootfs]
 mode=ubi
 image=${IMAGES_DIR}/rootfs.ubifs
-vol_id=0
+vol_id=1
 vol_type=dynamic
 vol_name=rootfs
 vol_flags=autoresize
@@ -81,22 +89,29 @@ EOF
 "${UBINIZE}" -m 2048 -p 131072 -s 2048 \
 	-o "${OUTPUT_DIR}/sys.ubi" "${TMP_DIR}/sys-ubi.ini"
 
-# Only these four images are written to NAND. The archive is recovered from a
+# Only these three media images are written to NAND. boot.itb is retained in
+# the output for FES packaging but is already embedded in sys.ubi, so the FEL
+# payload carries only its size/hash metadata instead of a duplicate 6 MiB copy.
+# The archive is recovered from a
 # reserved DRAM range by mainline Linux; it is never interpreted by BootROM or
 # U-Boot and has no vendor container.
 PAYLOAD_STAGE="${TMP_DIR}/payload"
 mkdir -p "${PAYLOAD_STAGE}"
 cp -f "${OUTPUT_DIR}/spl-redundant.bin" \
 	"${OUTPUT_DIR}/uboot-redundant.bin" \
-	"${OUTPUT_DIR}/boot.itb" "${OUTPUT_DIR}/sys.ubi" "${PAYLOAD_STAGE}/"
+	"${OUTPUT_DIR}/sys.ubi" "${PAYLOAD_STAGE}/"
+{
+	echo "boot_size=$(stat -c %s "${OUTPUT_DIR}/boot.itb")"
+	echo "boot_sha256=$(sha256sum "${OUTPUT_DIR}/boot.itb" | cut -d ' ' -f 1)"
+} > "${PAYLOAD_STAGE}/BOOT_VOLUME"
 (
 	cd "${PAYLOAD_STAGE}"
-	sha256sum spl-redundant.bin uboot-redundant.bin boot.itb sys.ubi > SHA256SUMS
+	sha256sum spl-redundant.bin uboot-redundant.bin sys.ubi BOOT_VOLUME > SHA256SUMS
 )
 tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner \
 	-czf "${OUTPUT_DIR}/fel-payload.tar.gz" \
 	-C "${PAYLOAD_STAGE}" spl-redundant.bin uboot-redundant.bin \
-	boot.itb sys.ubi SHA256SUMS
+	sys.ubi BOOT_VOLUME SHA256SUMS
 payload_size="$(stat -c %s "${OUTPUT_DIR}/fel-payload.tar.gz")"
 if [ "${payload_size}" -gt "${PAYLOAD_LIMIT}" ]; then
 	echo "FEL payload exceeds reserved 24 MiB: ${payload_size}" >&2

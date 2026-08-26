@@ -1,0 +1,9 @@
+# SHA-256 hashes of historical FES component images that must never be flashed.
+# They predate the 5 MiB physical sys boundary and boot/rootfs UBI-volume contract.
+03432b59605043f7ca7f02595336453bc47a3b1278bd8f1379ddca539802263a failed-do-not-use mainline-spinand-components.img
+53701b3efb17b7ea62515e16fc25b50f9a9294a7da22b162a7c4324aa31a5c16 failed-do-not-use mainline-spinand-components.no-verify.img
+f54a21ded2225aed890c0b9b461c2d7f89f17d44bc417dac34a0b082b5dcab53 failed-do-not-use mainline-spinand-components.pre-spinand-source4.img
+e8c702257de76681c51af22df895009f9deff9e355ac08129cdfd8c084259c77 failed-do-not-use mainline-spinand-components.source4.img
+73b9af6ab7a4f0657a0ab818a18ffb102301a2b214f5e1e0fdd3e91eabe4f345 failed-do-not-use mainline-spinand-components.spi-reset.img
+1f99200a0518149c77efd040dfdac246c10b0acb9fee2192b5da1d1dab0f8ff8 failed-do-not-use mainline-spinand-components.spi-source4.img
+dce5d61981925c70bee96ff2a28b9376cc17a09d90cbb3f3fa9d95d1ba629c36 failed-do-not-use remote-mainline-spinand-components.img

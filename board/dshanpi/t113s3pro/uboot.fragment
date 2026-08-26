@@ -20,7 +20,6 @@ CONFIG_ENV_IS_NOWHERE=y
 CONFIG_USE_BOOTARGS=y
 CONFIG_BOOTARGS="earlycon=uart8250,mmio32,0x02500c00 console=ttyS3,115200 ignore_loglevel loglevel=8 clk_ignore_unused ubi.mtd=sys root=ubi0:rootfs rootfstype=ubifs rw rootwait"
 CONFIG_USE_BOOTCOMMAND=y
-CONFIG_BOOTCOMMAND="if test -n ${fel_booted}; then echo Mainline FEL installer; bootm 0x44000000; else mtd list; mtd read boot 0x44000000; bootm 0x44000000; fi"
+CONFIG_BOOTCOMMAND="if test -n ${fel_booted}; then echo Mainline FEL installer; bootm 0x44000000; else mtd list; ubi part sys; ubi read 0x44000000 boot; bootm 0x44000000; fi"
 CONFIG_BOOTDELAY=3
 CONFIG_IDENT_STRING=" DshanPi T113S3 Pro"
-

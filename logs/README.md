@@ -31,3 +31,8 @@ unrelated devices, user data or controller serial number.
 observed after the final two-second power cycle. Together they prove the
 preserved hardware baseline again; they do not rehabilitate the failed clean
 rebuild.
+
+`fes-host-validation-20260826.jsonl` records the new formal FES-layout package
+hashes, closed-manifest preflight, JSONL failure-path gate, and 75 local source
+checks. It explicitly records `hardwareStatus=pending`; it is not cold-boot
+evidence.

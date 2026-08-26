@@ -84,24 +84,25 @@ echo "LYNX_PROGRESS phase=installer_verify_payload progress=58 partition=payload
 cd /payload || fail_shell
 sha256sum -c SHA256SUMS || fail_shell
 check_image_size spl-redundant.bin 1048576
-check_image_size uboot-redundant.bin 4194304
-[ "$(wc -c < boot.itb)" -le 8388608 ] || fail_shell
-[ "$(wc -c < sys.ubi)" -le 253755392 ] || fail_shell
+check_image_size uboot-redundant.bin 3145728
+[ -f BOOT_VOLUME ] || fail_shell
+. ./BOOT_VOLUME || fail_shell
+[ "${boot_size}" -le 8388608 ] || fail_shell
+[ "$(wc -c < sys.ubi)" -le 263192576 ] || fail_shell
 
 check_mtd mtd0 spl 1048576
-check_mtd mtd1 uboot 4194304
+check_mtd mtd1 uboot 3145728
 check_mtd mtd2 secure-storage 1048576
-check_mtd mtd3 boot 8388608
-check_mtd mtd4 sys 253755392
+check_mtd mtd3 sys 263192576
 
-sys_bad="$(cat /sys/class/mtd/mtd4/bad_blocks)"
+sys_bad="$(cat /sys/class/mtd/mtd3/bad_blocks)"
 if [ -d /sys/class/ubi/ubi0 ]; then
 	echo "Detaching the pre-existing sys UBI mapping..."
-	ubidetach /dev/ubi_ctrl -m 4 || fail_shell
+	ubidetach /dev/ubi_ctrl -m 3 || fail_shell
 fi
 if [ "$sys_bad" = 1953 ]; then
 	echo "Removing the detected legacy alternating-OOB markers..."
-	flash_erase /dev/mtd4 0 0 || fail_shell
+	flash_erase /dev/mtd3 0 0 || fail_shell
 elif [ "$sys_bad" -gt 40 ]; then
 	echo "Unexpected excessive bad-block map; refusing unsafe forced erase"
 	fail_shell
@@ -112,27 +113,25 @@ echo "LYNX_PROGRESS phase=installer_write_spl progress=62 partition=spl"
 flash_erase /dev/mtd0 0 0 && nandwrite -p /dev/mtd0 spl-redundant.bin || fail_shell
 echo "LYNX_PROGRESS phase=installer_write_uboot progress=67 partition=uboot"
 flash_erase /dev/mtd1 0 0 && nandwrite -p /dev/mtd1 uboot-redundant.bin || fail_shell
-echo "LYNX_PROGRESS phase=installer_write_boot progress=72 partition=boot"
-flash_erase /dev/mtd3 0 0 && nandwrite -p /dev/mtd3 boot.itb || fail_shell
 spl_sha="$(grep '  spl-redundant.bin$' SHA256SUMS)"
 uboot_sha="$(grep '  uboot-redundant.bin$' SHA256SUMS)"
-boot_sha="$(grep '  boot.itb$' SHA256SUMS)"
 verify_raw_partition mtd0 1048576 "${spl_sha%% *}"
-verify_raw_partition mtd1 4194304 "${uboot_sha%% *}"
-verify_raw_partition mtd3 "$(wc -c < boot.itb)" "${boot_sha%% *}"
+verify_raw_partition mtd1 3145728 "${uboot_sha%% *}"
 echo "LYNX_PROGRESS phase=installer_format_ubi progress=78 partition=sys"
-ubiformat /dev/mtd4 -y -f sys.ubi || fail_shell
+ubiformat /dev/mtd3 -y -f sys.ubi || fail_shell
 echo "LYNX_PROGRESS phase=installer_verify_rootfs progress=94 partition=rootfs"
-ubiattach /dev/ubi_ctrl -m 4 || fail_shell
+ubiattach /dev/ubi_ctrl -m 3 || fail_shell
 ubinfo -a || fail_shell
+[ -c /dev/ubi0_0 ] || fail_shell
+boot_actual="$(dd if=/dev/ubi0_0 bs=1 count="${boot_size}" 2>/dev/null | sha256sum)" || fail_shell
+[ "${boot_actual%% *}" = "${boot_sha256}" ] || fail_shell
 mount -t ubifs ubi0:rootfs /mnt || fail_shell
 [ -x /mnt/sbin/init ] || fail_shell
 umount /mnt || fail_shell
-ubidetach /dev/ubi_ctrl -m 4 || fail_shell
+ubidetach /dev/ubi_ctrl -m 3 || fail_shell
 sync
 echo "LYNX_PROGRESS phase=installer_complete progress=100 partition=none"
 echo "MAINLINE INSTALL COMPLETE - rebooting"
 reboot -f
 
 fail_shell
-

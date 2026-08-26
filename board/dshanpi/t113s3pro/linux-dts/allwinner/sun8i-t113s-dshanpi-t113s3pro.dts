@@ -128,23 +128,18 @@
 
 			partition@100000 {
 				label = "uboot";
-				reg = <0x00100000 0x00400000>;
+				reg = <0x00100000 0x00300000>;
 			};
 
-			partition@500000 {
+			partition@400000 {
 				label = "secure-storage";
-				reg = <0x00500000 0x00100000>;
+				reg = <0x00400000 0x00100000>;
 				read-only;
 			};
 
-			partition@600000 {
-				label = "boot";
-				reg = <0x00600000 0x00800000>;
-			};
-
-			partition@e00000 {
+			partition@500000 {
 				label = "sys";
-				reg = <0x00e00000 0x0f200000>;
+				reg = <0x00500000 0x0fb00000>;
 			};
 		};
 	};
@@ -186,4 +181,3 @@
 	usb1_vbus-supply = <&reg_vcc5v>;
 	status = "okay";
 };
-

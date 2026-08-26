@@ -12,9 +12,9 @@ Validated stack:
 - Buildroot at commit `86102dd8279ac6c4c0244f3e490af98dc7460d5e`;
 - UBIFS root filesystem.
 
-## Scope of this version
+## Installation routes
 
-This version supports one installation path:
+The hardware-verified recovery/development path remains:
 
 ```text
 BootROM FEL
@@ -26,10 +26,18 @@ BootROM FEL
   -> cold boot into the mainline system
 ```
 
-No Tina/IMAGEWTY loader or FES service is used by this supported path. Earlier
-FES NAND-component experiments are preserved only as historical records in
-[`docs/frozen-fes-experiments.md`](docs/frozen-fes-experiments.md); their code
-is not part of this release.
+The formal NAND provisioning route is now being implemented separately:
+
+```text
+BootROM FEL -> board-matched Tina loader in RAM -> FES
+  -> Boot0(mainline SPL) -> Boot1(mainline U-Boot)
+  -> boot.itb + sys.ubi -> FES verify -> power-off cold boot
+```
+
+The loader is transport/bootstrap only and is never selected as persistent
+firmware. This route is currently `experimental-pending-cold-boot`; FES media
+completion must not be presented as cold-boot success. See
+[`docs/fes-nand-provisioning.md`](docs/fes-nand-provisioning.md).
 
 The RAM installer uses the mainline Linux NAND core, MTD tools and UBI. It is a
 validated development and recovery mechanism for the tested board. It must not
@@ -37,18 +45,20 @@ be generalized into a claim of production NAND provisioning: BootROM/SPL boot
 redundancy, OOB/ECC compatibility and bad-block behavior require separate
 qualification for each NAND device and manufacturing process.
 
-The exact preserved bundle named in
+The earlier physical-layout bundle named in
 [`manifests/verified-hardware-artifacts.sha256`](manifests/verified-hardware-artifacts.sha256)
-has passed this complete gate twice. The later clean repository rebuild is
+has passed its complete gate twice. It remains historical evidence for the
+board port, but does not qualify the newly aligned FES/UBI layout. The later clean repository rebuild is
 internally valid but failed to start its RAM installer on hardware and is
 explicitly `failed-do-not-use`. See
 [`docs/verification-status.md`](docs/verification-status.md) before selecting
 any artifact. The UART3 patch-loss root cause has since been repaired and a new
 source-recovery candidate passes all local gates, but that exact candidate is
-now hardware-verified by a complete installer, warm reboot and two controlled
-power-off cold boots. The exact hashes are in
+hardware-verified by a complete installer, warm reboot and two controlled
+power-off cold boots for the previous layout. The exact hashes are in
 `manifests/hardware-verified-source-rebuild-20260825.sha256`. This feature branch
-remains a development/recovery release rather than a manufacturing NAND claim.
+remains preserved; the current FES-aligned source is explicitly pending new
+hardware qualification and is not yet a manufacturing NAND release.
 
 ## Build
 
@@ -134,5 +144,6 @@ still requires a controlled power-off interval and a fresh UART capture.
 - [Troubleshooting](docs/troubleshooting.md)
 - [Automated two-repository workflow](docs/automated-workflow.md)
 - [Frozen FES experiments](docs/frozen-fes-experiments.md)
+- [Active FES NAND provisioning design](docs/fes-nand-provisioning.md)
 - [Logs and evidence](logs/README.md)
 - [Latest line-by-line local validation](logs/local-validation-20260825.txt)

@@ -96,3 +96,30 @@ the complete NAND layout, rebooted into UBIFS, and reached the login prompt.
 Two subsequent Lynx Power cycles with at least two seconds fully off also
 reached the login prompt. The source-recovery candidate was therefore promoted
 to `hardware-verified` for the tested T113S3 Pro/W25N02KV combination.
+
+## Formal FES NAND route, 2026-08-26
+
+The historical 1/4/1/8/242 MiB layout above belongs to the verified mainline
+RAM installer. It is retained as recovery evidence, not used as the formal FES
+component layout.
+
+Inspection of the authorized Tina SPI-NAND FES source established the vendor
+physical reservations: Boot0 blocks 0-7 (1 MiB), Boot1 blocks 8-31 (3 MiB),
+secure storage blocks 32-39 (1 MiB), and the UBI region from 5 MiB onward. The
+current mainline DTS, U-Boot command, bundle schema, and FES package generator
+were migrated together to that contract. FES MBR entries are pinned to
+`boot=504/16632`, `rootfs=17136/81900`, and `UDISK=99036/0` sectors.
+
+OpenixCLI gained a separate `flash-nand-components` command. It uses the vendor
+loader only for RAM bootstrap, keeps the persistent mainline package separate,
+checks every SHA-256 and embedded file signature, checks the exact MBR, binds
+FEL/FES to one USB topology, rejects non-NAND media/capacity mismatches, and
+treats erase, MBR, partition, Boot0, and Boot1 verification failures as fatal.
+Automatic task retry is disabled. Its JSONL stream contains protocol progress
+only and never UART.
+
+Host validation and a real component-package build passed. No USB device was
+present for the final destructive gate, so the new layout remains
+`experimental-pending-cold-boot`. It must not inherit the older RAM-installer
+hardware status. The exact host evidence is recorded in
+`logs/fes-host-validation-20260826.jsonl`.
