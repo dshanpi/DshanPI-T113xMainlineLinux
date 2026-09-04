@@ -149,10 +149,12 @@ loader，并等待 SHA-256 校验成功；调用 `lynx_start_flash` 时选择
 `logs/fes-hardware-validation-20260826.jsonl`、
 `logs/fes-v5-cold-boot-20260826.log`。
 
-2026-09-04 重新生成的候选组件包进行了两次相互独立、均由人工重新进入 FEL
-开始的尝试。两次都在 loader 完成 DRAM 初始化后未重新枚举为 FES，于 8%
-终止；没有 NAND committed bytes，校验未运行，也没有自动重试。第二次失败后
-绑定 USB 上仍未发现设备，UART3 也没有收到字节。这一可重复现象把问题范围
+2026-09-04 重新生成的候选组件包进行了三次相互独立、均由人工重新进入 FEL
+开始的尝试。三次均由 Lynx `lynx_start_flash` 执行，并都在 loader 完成 DRAM
+初始化后未重新枚举为 FES，于 8% 终止；没有 NAND committed bytes，校验未
+运行，也没有自动重试。第二次失败后绑定 USB 上仍未发现设备，UART3 也没有
+收到字节；第三次在启动前关闭 UART 监视句柄，结果仍相同，因而排除了 UART
+监视句柄占用。这一可重复现象把问题范围
 收窄到 RAM loader 执行后的 FES 启动/USB 重枚举阶段，而不是 MBR、分区内容或
 NAND 写入阶段。结果记录在 `logs/fes-validation-20260904.jsonl`，不能称为烧录
 成功，也不改变旧 v5 精确哈希集合的已验证状态。
