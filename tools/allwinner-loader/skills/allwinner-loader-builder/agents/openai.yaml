@@ -1,0 +1,4 @@
+interface:
+  display_name: "Allwinner Loader Builder"
+  short_description: "Build and verify RAM-only Allwinner IMAGEWTY loaders"
+  default_prompt: "Build a validated Allwinner RAM-only loader from a hardware manifest and report its identity and hashes."

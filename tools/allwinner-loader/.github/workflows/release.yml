@@ -1,0 +1,32 @@
+name: Release loaders
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y libc6-i386 lib32stdc++6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: make check
+      - run: make dist
+      - name: Package tools and specification
+        run: |
+          tar -czf "dist/allwinner-loader-tools-${GITHUB_REF_NAME}.tar.gz" \
+            tools action.yml skills AGENTS.md NOTICE.md docs
+          tar -czf "dist/allwinner-loader-sources-${GITHUB_REF_NAME}.tar.gz" \
+            profiles NOTICE.md
+      - name: Refresh checksums
+        run: python3 -c 'import sys; from pathlib import Path; sys.path.insert(0,"tools"); import allwinner_loader as a; a.write_sums(Path("dist"))'
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes --verify-tag

@@ -1,0 +1,9 @@
+{
+  "name": "Allwinner compatible Tina packing tools",
+  "source_url": "https://github.com/OpenNekoCloud/openixsuit-generic-img-flash-boot-image",
+  "source_revision": "f71e668ccb690ea4213c7f14d630bd97dfe288a0",
+  "source_path": "T113M4/tools",
+  "license": "LicenseRef-NOASSERTION",
+  "redistribution_note": "Copied unmodified by repository owner authorization; not covered by the repository GPL-3.0 license."
+}
+

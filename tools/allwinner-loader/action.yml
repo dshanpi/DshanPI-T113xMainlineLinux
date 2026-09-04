@@ -1,0 +1,23 @@
+name: Build Allwinner RAM loader
+description: Validate a loader.json and build a verified IMAGEWTY RAM-only loader
+inputs:
+  manifest:
+    description: Path to loader.json in the caller repository
+    required: true
+  output-dir:
+    description: Output directory in the caller repository
+    required: false
+    default: dist
+runs:
+  using: composite
+  steps:
+    - name: Install 32-bit vendor-tool runtime
+      shell: bash
+      run: sudo apt-get update && sudo apt-get install -y libc6-i386 lib32stdc++6
+    - name: Build and verify loader
+      shell: bash
+      run: >-
+        python3 "$GITHUB_ACTION_PATH/tools/allwinner_loader.py" build
+        --manifest "${{ inputs.manifest }}"
+        --output-dir "${{ inputs.output-dir }}"
+        --check-reproducible
