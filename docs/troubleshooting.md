@@ -39,3 +39,23 @@ success from transferred bytes alone.
 Another process or the host OS may own the endpoint, or the VM may not have
 captured it. Stop background scans, confirm one owner, re-enter FEL manually and
 start a new task. Failed tasks are never retried automatically.
+
+## U-Boot reports `Unknown command 'efex'`
+
+The pure-mainline U-Boot configuration does not provide the vendor `efex`
+command. Re-enter FEL with the board's physical FEL strap/button and reset or
+power cycle. Do not repeatedly send the unsupported command.
+
+## MCP reaches its timeout after RAM handoff
+
+The Linux installer runs independently on the board after FEL RAM handoff. A
+host monitor timeout does not prove that the board stopped. Continue passive
+UART observation without closing the shared serial handle, automatically
+retrying, or cycling power. Accept only the explicit `installer_complete`
+marker, reboot login prompt, and a separate cold boot.
+
+## `nandwrite` warns about blocks containing only `0xff`
+
+The redundant SPL and reserved U-Boot partition images intentionally contain
+padding filled with `0xff`. The warning alone is not a write failure. Require
+the subsequent readback SHA-256 markers.
