@@ -148,8 +148,6 @@ still requires a controlled power-off interval and a fresh UART capture.
 
 ## Documentation
 
-- [中文：镜像说明与 FEL 烧录步骤](docs/images-and-fel-flashing.zh-CN.md)
-- [2026-09-04 FEL release candidate notes](docs/releases/t113s3pro-mainline-fel-20260904-rc1.md)
 - [Hardware facts](docs/hardware.md)
 - [Porting order](docs/porting-order.md)
 - [Boot and installation chain](docs/boot-chain.md)

@@ -123,14 +123,7 @@ echo "LYNX_PROGRESS phase=installer_verify_rootfs progress=94 partition=rootfs"
 ubiattach /dev/ubi_ctrl -m 3 || fail_shell
 ubinfo -a || fail_shell
 [ -c /dev/ubi0_0 ] || fail_shell
-# Read whole NAND pages in bounded blocks. BusyBox dd with bs=1 and BusyBox
-# head -c both loop per byte on this target and can exceed the host watchdog.
-boot_readback=/tmp/boot-readback.itb
-boot_blocks=$(( (boot_size + 65535) / 65536 ))
-dd if=/dev/ubi0_0 of="${boot_readback}" bs=65536 count="${boot_blocks}" 2>/dev/null || fail_shell
-truncate -s "${boot_size}" "${boot_readback}" || fail_shell
-boot_actual="$(sha256sum "${boot_readback}")" || fail_shell
-rm -f "${boot_readback}"
+boot_actual="$(dd if=/dev/ubi0_0 bs=1 count="${boot_size}" 2>/dev/null | sha256sum)" || fail_shell
 [ "${boot_actual%% *}" = "${boot_sha256}" ] || fail_shell
 mount -t ubifs ubi0:rootfs /mnt || fail_shell
 [ -x /mnt/sbin/init ] || fail_shell

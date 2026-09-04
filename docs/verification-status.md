@@ -1,30 +1,5 @@
 # Verification status
 
-## 2026-09-04 FEL release candidate
-
-Task `mainline-1788508715752023200` used a development build from the source
-prepared for the 2026-09-04 release candidate. The board entered FEL, booted
-the mainline RAM installer, validated every payload hash, wrote `mtd0` and
-`mtd1`, and passed
-their SHA-256 readback. `ubiformat` then flashed `sys.ubi` to all required
-eraseblocks; UBI attached 2008 good PEBs with no bad or corrupted PEBs and
-reported the expected static `boot` and dynamic `rootfs` volumes.
-
-The run then remained at `installer_verify_rootfs` (94%). Lynx ended its host
-task after the fixed 180-second window with
-`MAINLINE_INSTALLER_TIMEOUT:no completion marker within 180 seconds`, and no
-later UART completion marker was observed during the bounded follow-up. There
-was no automatic retry or power cycle.
-
-This proves that the destructive writes and the first two readbacks ran, but it
-does not prove final `boot` hash verification, UBIFS mount, installer reboot, or
-cold boot. The release archive was repackaged afterward and has the exact hashes
-in `manifests/release-candidate-20260904-rc1.sha256`; FIT timestamps and UBI
-metadata mean it is not byte-identical to the attempted build and it has no
-hardware qualification of its own. Releases carrying it must therefore be
-marked prerelease/unverified and must not supersede the hardware-proven
-2026-08-25 and formal FES 2026-08-26 baselines below.
-
 ## Hardware-proven baseline
 
 On 2026-08-25 installer task `mainline-1787655837814079629` completed with

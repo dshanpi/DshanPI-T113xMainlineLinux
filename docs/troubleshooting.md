@@ -39,30 +39,3 @@ success from transferred bytes alone.
 Another process or the host OS may own the endpoint, or the VM may not have
 captured it. Stop background scans, confirm one owner, re-enter FEL manually and
 start a new task. Failed tasks are never retried automatically.
-
-## U-Boot reports `Unknown command 'efex'`
-
-The current mainline U-Boot configuration does not provide the vendor `efex`
-command. Re-enter FEL with the board's physical FEL strap/button and reset or
-power cycle. Do not treat repeated serial commands as a valid retry path.
-
-## MCP times out at `installer_verify_rootfs` 94%
-
-The MCP monitor has a 180-second completion window, while the Linux installer
-runs independently on the board after FEL RAM handoff. A timeout is terminal
-for that host task but does not prove that the board stopped. Continue passive
-UART observation without closing the shared serial handle, retrying, or cycling
-power. Accept the installation only if UART later shows `installer_complete`,
-the reboot reaches the login prompt, and a separate cold boot passes.
-
-Task `mainline-1788508715752023200` on 2026-09-04 wrote and read back SPL and
-U-Boot, formatted `sys.ubi`, and attached its `boot/rootfs` volumes, but emitted
-no completion marker before the timeout. That exact run is incomplete, not a
-successful flash qualification.
-
-## `nandwrite` warns about blocks containing only `0xff`
-
-The redundant SPL and reserved U-Boot partition images intentionally contain
-padding filled with `0xff`. This warning alone is not a write failure. Require
-the subsequent `/dev/mtd0 readback SHA-256 OK` and `/dev/mtd1 readback SHA-256
-OK` markers.
