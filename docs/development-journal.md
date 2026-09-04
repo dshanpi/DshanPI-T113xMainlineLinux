@@ -197,7 +197,7 @@ for the exact hardware and hashes recorded in
 
 ## Unified release FES revalidation, 2026-09-04
 
-The newly packaged unified-release candidate was attempted three times through
+The newly packaged unified-release candidate was attempted four times through
 Lynx `lynx_start_flash`, with a fresh manual FEL entry before each task. All
 attempts validated the same component
 package and the hardware-verified v5 loader hash. DRAM initialization and the
@@ -209,3 +209,6 @@ bounded to FES startup/USB re-enumeration after RAM-loader execution; it is not
 evidence of a partition, MBR, or NAND-write failure. No attempt was
 automatically retried. The third attempt closed the UART monitor before starting
 and produced the same result, ruling out ownership of that monitor handle.
+The fourth attempt first confirmed the FEL endpoint with two consecutive Lynx
+scans and kept UART unopened; it again reached the same fixed 30-second FES
+reconnect failure.

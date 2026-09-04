@@ -14,11 +14,11 @@ FEL 与 FES 当前都采用 1 MiB SPL、3 MiB U-Boot、1 MiB secure-storage、
 251 MiB `sys`/UBI 布局。
 
 验证边界：2026-08-26 的精确 v5 FES 集合已通过写入校验和冷启动。本 release
-重新生成的 FES 候选包先后进行了三次人工恢复 FEL 后的独立验证，均由 Lynx
-`lynx_start_flash` 执行。三次都在 RAM
+重新生成的 FES 候选包先后进行了四次人工恢复 FEL 后的独立验证，均由 Lynx
+`lynx_start_flash` 执行。四次都在 RAM
 loader/DRAM 初始化成功后未重新枚举为 FES，于写 NAND 前终止，
 `committedBytes` 为空且 verify 未运行。因此该候选 FES 包用于复现和继续验证，
-不能宣称为本轮硬件烧录成功。三次失败后均未自动重试。
+不能宣称为本轮硬件烧录成功。四次失败后均未自动重试。
 
 loader 固定 SHA-256：
 
