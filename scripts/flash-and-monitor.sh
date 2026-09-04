@@ -9,7 +9,7 @@ TIMEOUT="${4:-300}"
 LOG_DIR="${ROOT}/out/flash-logs"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 UART_LOG="${LOG_DIR}/uart-${STAMP}.log"
-OPENIXCLI_BIN="${OPENIXCLI_BIN:-openixcli}"
+OPENIXCLI_BIN="${OPENIXCLI_BIN:-${ROOT}/tools/OpenixCLI/target/release/openixcli}"
 
 command -v "${OPENIXCLI_BIN}" >/dev/null 2>&1 || {
 	echo "OpenixCLI executable not found: ${OPENIXCLI_BIN}" >&2

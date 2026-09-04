@@ -21,6 +21,10 @@ REQUIRED_KEYS = {
     "UBOOT_ARCHIVE_SHA256",
     "OPENIXCLI_GIT_URL",
     "OPENIXCLI_COMMIT",
+    "OPENIXCLI_TREE",
+    "ALLWINNER_LOADER_GIT_URL",
+    "ALLWINNER_LOADER_COMMIT",
+    "ALLWINNER_LOADER_TREE",
 }
 
 
@@ -58,7 +62,13 @@ def validate_source_lock(lock: dict[str, str]) -> None:
     extra = set(lock) - REQUIRED_KEYS
     if missing or extra:
         raise ValueError(f"unexpected source-lock keys: missing={sorted(missing)} extra={sorted(extra)}")
-    for key in ("BUILDROOT_COMMIT", "OPENIXCLI_COMMIT"):
+    for key in (
+        "BUILDROOT_COMMIT",
+        "OPENIXCLI_COMMIT",
+        "OPENIXCLI_TREE",
+        "ALLWINNER_LOADER_COMMIT",
+        "ALLWINNER_LOADER_TREE",
+    ):
         if not re.fullmatch(r"[0-9a-f]{40}", lock[key]):
             raise ValueError(f"{key} must be a full lowercase Git commit")
     for key in ("LINUX_ARCHIVE_SHA256", "UBOOT_ARCHIVE_SHA256"):
@@ -95,6 +105,13 @@ def validate_source_lock(lock: dict[str, str]) -> None:
         "github.com",
         "/100askTeam/OpenixCLI.git",
         "OpenixCLI repository",
+    )
+    _exact_url(
+        lock["ALLWINNER_LOADER_GIT_URL"],
+        "https",
+        "github.com",
+        "/dshanpi/allwinner-loader.git",
+        "allwinner-loader repository",
     )
 
 

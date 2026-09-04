@@ -38,8 +38,10 @@ from the IMAGEWTY component package and compares it with the manifest hash
 before opening USB. This prevents a correct loose file being paired with a
 stale container.
 
-The bootstrap loader cannot be redistributed from this repository until its
-license is confirmed. Supply a board-matched image from an authorized Tina SDK.
+The bootstrap loader builder, profile and required input bins are included under
+`tools/allwinner-loader/`. Build it reproducibly with `make -C
+tools/allwinner-loader check dist`; its canonical output is copied into the FES
+bundle as `bootstrap-loader.img`.
 
 ## Required layout agreement
 
@@ -93,7 +95,7 @@ fail with a USB protocol error.
 Host-only validation opens no USB:
 
 ```sh
-OPENIXCLI_BIN=../OpenixCLI/target/release/openixcli \
+OPENIXCLI_BIN=$PWD/tools/OpenixCLI/target/release/openixcli \
 FES_BUNDLE=$PWD/out/t113s3pro-mainline-fes make fes-preflight
 ```
 
@@ -101,7 +103,7 @@ The destructive hardware operation requires an explicit endpoint:
 
 ```sh
 DEVICE_LOCATION=libusb:3:2 BUS=3 PORT=2 \
-OPENIXCLI_BIN=../OpenixCLI/target/release/openixcli \
+OPENIXCLI_BIN=$PWD/tools/OpenixCLI/target/release/openixcli \
 ./scripts/flash-fes-nand.sh ./out/t113s3pro-mainline-fes
 ```
 

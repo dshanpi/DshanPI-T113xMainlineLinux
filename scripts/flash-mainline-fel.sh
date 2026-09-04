@@ -4,7 +4,7 @@ set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 ARTIFACTS="${1:-${ROOT}/out/t113s3pro-mainline-fel}"
 LOCATION="${2:-auto}"
-OPENIXCLI_BIN="${OPENIXCLI_BIN:-openixcli}"
+OPENIXCLI_BIN="${OPENIXCLI_BIN:-${ROOT}/tools/OpenixCLI/target/release/openixcli}"
 
 command -v "${OPENIXCLI_BIN}" >/dev/null 2>&1 || {
 	echo "OpenixCLI executable not found: ${OPENIXCLI_BIN}" >&2

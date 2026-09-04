@@ -9,10 +9,12 @@ LOCK="${ROOT}/manifests/sources.lock"
 . "${LOCK}"
 
 OPENIXCLI_MANAGED=0
+OPENIXCLI_EMBEDDED=0
 if [ -n "${OPENIXCLI_DIR:-}" ]; then
 	OPENIXCLI_DIR="$(CDPATH= cd -- "${OPENIXCLI_DIR}" && pwd)"
-elif [ -f "${ROOT}/../OpenixCLI/Cargo.toml" ]; then
-	OPENIXCLI_DIR="$(CDPATH= cd -- "${ROOT}/../OpenixCLI" && pwd)"
+elif [ -f "${ROOT}/tools/OpenixCLI/Cargo.toml" ]; then
+	OPENIXCLI_DIR="${ROOT}/tools/OpenixCLI"
+	OPENIXCLI_EMBEDDED=1
 else
 	OPENIXCLI_DIR="${ROOT}/.deps/OpenixCLI"
 	OPENIXCLI_MANAGED=1
@@ -43,22 +45,37 @@ else
 	}
 fi
 
-openix_head="$(git -C "${OPENIXCLI_DIR}" rev-parse HEAD)"
-[ "${openix_head}" = "${OPENIXCLI_COMMIT}" ] || {
-	echo "OpenixCLI revision mismatch: expected ${OPENIXCLI_COMMIT}, got ${openix_head}" >&2
-	exit 2
-}
+if [ "${OPENIXCLI_EMBEDDED}" -eq 1 ]; then
+	openix_tree="$(git -C "${ROOT}" rev-parse HEAD:tools/OpenixCLI)"
+	[ "${openix_tree}" = "${OPENIXCLI_TREE}" ] || {
+		echo "Embedded OpenixCLI tree mismatch: expected ${OPENIXCLI_TREE}, got ${openix_tree}" >&2
+		exit 2
+	}
+	git -C "${ROOT}" diff --quiet -- tools/OpenixCLI || {
+		echo "Refusing a modified embedded OpenixCLI tree" >&2
+		exit 2
+	}
+else
+	openix_head="$(git -C "${OPENIXCLI_DIR}" rev-parse HEAD)"
+	[ "${openix_head}" = "${OPENIXCLI_COMMIT}" ] || {
+		echo "OpenixCLI revision mismatch: expected ${OPENIXCLI_COMMIT}, got ${openix_head}" >&2
+		exit 2
+	}
+fi
 
-echo "[1/5] Testing pinned OpenixCLI sources"
+echo "[1/6] Testing embedded OpenixCLI sources"
 cargo test --locked --manifest-path "${OPENIXCLI_DIR}/Cargo.toml"
-echo "[2/5] Building OpenixCLI release binary"
+echo "[2/6] Building OpenixCLI release binary"
 cargo build --release --locked --manifest-path "${OPENIXCLI_DIR}/Cargo.toml"
-echo "[3/5] Building and packaging the T113S3 Pro mainline system"
+echo "[3/6] Building the embedded RAM-only FES loader"
+make -C "${ROOT}/tools/allwinner-loader" check dist
+FES_BOOTSTRAP_LOADER="${FES_BOOTSTRAP_LOADER:-${ROOT}/tools/allwinner-loader/dist/t113s3-ddr3-spinand-dshanpi-t113s3pro-loader.bin}"
+echo "[4/6] Building and packaging the T113S3 Pro mainline system"
 "${ROOT}/scripts/build-and-package.sh"
-echo "[4/5] Running repository and artifact acceptance gates"
+echo "[5/6] Running repository and artifact acceptance gates"
 "${ROOT}/scripts/validate-local.py"
 
-echo "[5/5] Preparing optional licensed FES bundle"
+echo "[6/6] Preparing optional FES bundle"
 if [ -n "${TINA_SDK:-}" ]; then
 	FES_BUILD="${ROOT}/out/t113s3pro-mainline-fes-build"
 	"${ROOT}/scripts/package-fes-components.sh" "${FES_BUILD}"
@@ -78,10 +95,10 @@ if [ -n "${TINA_SDK:-}" ]; then
 			--device-location libusb:0:0 --bus 0 --port 0 \
 			--mode full_erase --post-action none
 	else
-		echo "FES_BUNDLE_SKIPPED: set FES_BOOTSTRAP_LOADER to an authorized board loader"
+		echo "FES_BUNDLE_SKIPPED: loader was not built"
 	fi
 else
-	echo "FES_PACKAGE_SKIPPED: set TINA_SDK and FES_BOOTSTRAP_LOADER for the licensed FES route"
+	echo "FES_PACKAGE_SKIPPED: set TINA_SDK to the Tina packaging-tool directory"
 fi
 
 echo

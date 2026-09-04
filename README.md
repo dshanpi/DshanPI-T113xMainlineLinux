@@ -70,44 +70,41 @@ Ubuntu/Debian host prerequisites include Git, Make, GCC, Python 3, `cpio`,
 space for a complete cross-build.
 
 ```sh
-git clone -b feat/fes-nand-components \
-  https://github.com/dshanpi/DshanPI-T113xMainlineLinux.git
+git clone https://github.com/dshanpi/DshanPI-T113xMainlineLinux.git
 cd DshanPI-T113xMainlineLinux
 ./scripts/one-click-build.sh
 ```
 
 The one-click script performs the following operations:
 
-1. clones the pinned OpenixCLI and Buildroot trees;
+1. validates the embedded OpenixCLI and allwinner-loader trees and clones pinned Buildroot;
 2. installs the DshanPi defconfig and board support;
 3. downloads Linux 6.18.8 from kernel.org and U-Boot 2026.07 from DENX, then verifies their pinned SHA-256 values;
 4. builds the toolchain, U-Boot, kernel, DTB and UBIFS root filesystem;
 5. builds the self-contained mainline Linux RAM installer;
-6. tests and builds the pinned OpenixCLI release binary;
+6. tests and builds the embedded OpenixCLI and reproducible RAM-only FES loader;
 7. emits the bounded FEL artifact bundle under `out/t113s3pro-mainline-fel`;
 8. runs all repository, source-lock and artifact validation gates.
 
 The exact source versions and archive hashes are recorded in
 [`manifests/sources.lock`](manifests/sources.lock).
 
-For the formal FES NAND package, pass authorized local Tina packaging tools and
-the board-specific RAM loader:
+For the formal FES NAND package, pass the Tina packaging-tool directory:
 
 ```sh
 TINA_SDK=/absolute/path/to/authorized/Tina-SDK \
-FES_BOOTSTRAP_LOADER=/absolute/path/to/authorized/loader.img \
 ./scripts/one-click-build.sh
 ```
 
-Those two inputs are not downloadable public dependencies in this repository and
-are never committed because their redistribution permission is not established.
-The script builds everything else without them and clearly reports only the FES
-packaging stage as skipped. Building never writes a connected board.
+The loader builder, profile and required input bins are committed under
+`tools/allwinner-loader/`; the generated loader is selected automatically. Tina
+packaging tools remain an external build input. Building never writes a connected
+board.
 
 ## Flash
 
-The one-repository workflow above obtains the pinned OpenixCLI automatically. An
-existing exact OpenixCLI checkout can instead be selected explicitly:
+OpenixCLI now lives under `tools/OpenixCLI/`. An external exact checkout can
+still be selected explicitly:
 
 ```sh
 OPENIXCLI_DIR=/absolute/path/to/OpenixCLI ./scripts/one-click-build.sh
@@ -118,8 +115,7 @@ With exactly one Allwinner device attached, the workflow can select its physical
 USB endpoint automatically and wait for board-side installer plus reboot evidence:
 
 ```sh
-OPENIXCLI_BIN=../OpenixCLI/target/release/openixcli \
-  ./scripts/flash-and-monitor.sh \
+./scripts/flash-and-monitor.sh \
   ./out/t113s3pro-mainline-fel auto /dev/ttyACM0 300
 ```
 
@@ -146,6 +142,20 @@ success requires all of the following:
 login prompt. It does not claim a power-off cold boot. Release qualification
 still requires a controlled power-off interval and a fresh UART capture.
 
+For SPI-NAND FES component flashing, first run the host-only preflight and then
+bind the exact FEL USB endpoint:
+
+```sh
+FES_BUNDLE=$PWD/out/t113s3pro-mainline-fes \
+OPENIXCLI_BIN=$PWD/tools/OpenixCLI/target/release/openixcli make fes-preflight
+
+DEVICE_LOCATION=libusb:BUS:PORT BUS=BUS PORT=PORT \
+  ./scripts/flash-fes-nand.sh ./out/t113s3pro-mainline-fes
+```
+
+This is a destructive `full_erase` operation. The RAM loader is not written to
+NAND, and a separate power-off cold boot is required after FES verification.
+
 ## Documentation
 
 - [Hardware facts](docs/hardware.md)
@@ -156,7 +166,8 @@ still requires a controlled power-off interval and a fresh UART capture.
 - [Development journal](docs/development-journal.md)
 - [Verification status](docs/verification-status.md)
 - [Troubleshooting](docs/troubleshooting.md)
-- [Automated two-repository workflow](docs/automated-workflow.md)
+- [中文镜像、源码与 FEL/FES 烧录说明](docs/images-and-flashing.zh-CN.md)
+- [Unified repository workflow](docs/automated-workflow.md)
 - [Frozen FES experiments](docs/frozen-fes-experiments.md)
 - [Active FES NAND provisioning design](docs/fes-nand-provisioning.md)
 - [Logs and evidence](logs/README.md)

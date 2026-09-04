@@ -3,7 +3,7 @@ set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 BUNDLE="${1:-${ROOT}/out/t113s3pro-mainline-fes}"
-OPENIXCLI_BIN="${OPENIXCLI_BIN:-${ROOT}/../OpenixCLI/target/release/openixcli}"
+OPENIXCLI_BIN="${OPENIXCLI_BIN:-${ROOT}/tools/OpenixCLI/target/release/openixcli}"
 DEVICE_LOCATION="${DEVICE_LOCATION:-}"
 BUS="${BUS:-}"
 PORT="${PORT:-}"

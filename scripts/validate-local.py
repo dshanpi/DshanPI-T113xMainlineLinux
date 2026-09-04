@@ -288,7 +288,14 @@ def main() -> int:
         ("T007", "Buildroot uses the official GitLab repository", lambda: require(lock["BUILDROOT_GIT_URL"] == "https://gitlab.com/buildroot.org/buildroot.git", "wrong Buildroot URL")),
         ("T008", "Linux uses the exact official kernel.org archive", lambda: require(lock["LINUX_ARCHIVE_URL"] == "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.8.tar.xz", "wrong Linux URL")),
         ("T009", "U-Boot uses the exact official DENX archive", lambda: require(lock["UBOOT_ARCHIVE_URL"] == "https://ftp.denx.de/pub/u-boot/u-boot-2026.07.tar.bz2", "wrong U-Boot URL")),
-        ("T010", "OpenixCLI source and full revision are pinned", lambda: require(lock["OPENIXCLI_GIT_URL"] == "https://github.com/100askTeam/OpenixCLI.git" and lock["OPENIXCLI_COMMIT"] == "de80fb95aabd3bd4f2afe1e355f9bc2f5bb94bca", "wrong OpenixCLI source")),
+        ("T010", "embedded flashing tools and source revisions are pinned", lambda: require(
+            lock["OPENIXCLI_GIT_URL"] == "https://github.com/100askTeam/OpenixCLI.git"
+            and lock["OPENIXCLI_COMMIT"] == "de80fb95aabd3bd4f2afe1e355f9bc2f5bb94bca"
+            and lock["OPENIXCLI_TREE"] == "b5000b5de3826df398f2d95a0f9c66e7e509164d"
+            and lock["ALLWINNER_LOADER_GIT_URL"] == "https://github.com/dshanpi/allwinner-loader.git"
+            and lock["ALLWINNER_LOADER_COMMIT"] == "def7606965104847055d579670cd108c36abcf3c"
+            and lock["ALLWINNER_LOADER_TREE"] == "3b22165037ef5b5ce7f1acc462e853eb65f24528",
+            "wrong embedded flashing-tool source")),
     ]
     for item in checks:
         check(*item)
@@ -308,7 +315,13 @@ def main() -> int:
         "scripts/fetch-pinned-sources.py",
         "scripts/test-source-workflow.py",
         "scripts/one-click-build.sh",
+        "tools/OpenixCLI/Cargo.toml",
+        "tools/allwinner-loader/tools/allwinner_loader.py",
+        "tools/allwinner-loader/profiles/t113s3-ddr3-spinand-dshanpi-t113s3pro/loader.json",
+        "tools/allwinner-loader/profiles/t113s3-ddr3-spinand-dshanpi-t113s3pro/input/u-boot.fex",
         "docs/fes-nand-provisioning.md",
+        "docs/images-and-flashing.zh-CN.md",
+        "logs/fes-validation-20260904.jsonl",
         "logs/fes-host-validation-20260826.jsonl",
     ]
     for index, name in enumerate(required, 11):

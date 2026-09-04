@@ -1,14 +1,15 @@
-# Automated two-repository workflow
+# Automated unified-repository workflow
 
 ## Contract
 
 The supported source workflow pins exact commits, not moving branch tips:
 
-- OpenixCLI `de80fb95aabd3bd4f2afe1e355f9bc2f5bb94bca`;
-- this repository's tested `feat/fes-nand-components` revision.
+- embedded OpenixCLI tree from `de80fb95aabd3bd4f2afe1e355f9bc2f5bb94bca`;
+- embedded allwinner-loader tree with the DshanPi T113S3 Pro profile;
+- this repository's `main` revision.
 
-External upstream sources are not vendored. The board repository downloads and
-verifies the following immutable inputs:
+OpenixCLI and allwinner-loader are vendored with Git subtree history. The board
+repository downloads and verifies the remaining immutable inputs:
 
 | Input | Version/revision | Official source |
 | --- | --- | --- |
@@ -16,40 +17,39 @@ verifies the following immutable inputs:
 | Linux | `6.18.8` | `https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.8.tar.xz` |
 | U-Boot | `2026.07` | `https://ftp.denx.de/pub/u-boot/u-boot-2026.07.tar.bz2` |
 | OpenixCLI | `de80fb95aabd3bd4f2afe1e355f9bc2f5bb94bca` | `https://github.com/100askTeam/OpenixCLI.git` |
+| allwinner-loader | `def7606965104847055d579670cd108c36abcf3c` | `https://github.com/dshanpi/allwinner-loader.git` |
 
 Linux and U-Boot archives are verified against SHA-256 values in
-`manifests/sources.lock`. Buildroot and OpenixCLI are checked out by full Git
-commit. A URL, version, hash, missing key, or extra key mismatch fails closed.
+`manifests/sources.lock`. Buildroot is checked out by full Git commit; embedded
+tool directories are pinned by source commit and exact Git tree. A URL, version,
+hash, missing key, extra key, or tree mismatch fails closed.
 
 ## Build
 
 ```sh
-git clone -b feat/fes-nand-components \
-  https://github.com/dshanpi/DshanPI-T113xMainlineLinux.git
+git clone https://github.com/dshanpi/DshanPI-T113xMainlineLinux.git
 cd DshanPI-T113xMainlineLinux
 ./scripts/one-click-build.sh
 ```
 
-The script automatically clones the pinned OpenixCLI commit into `.deps/` when
-there is no sibling checkout. It refuses missing host tools, a dirty explicitly
-selected OpenixCLI checkout, or a revision mismatch. It then runs the locked
-OpenixCLI tests, builds its release binary, builds every board artifact, packages
-the FEL RAM installer, and executes all local acceptance gates.
+The script uses `tools/OpenixCLI/` by default and validates its exact tree. It
+runs the locked OpenixCLI tests, builds the release binary, validates and builds
+the reproducible loader under `tools/allwinner-loader/`, builds every board
+artifact, packages the FEL RAM installer, and executes all local acceptance
+gates.
 
 The mainline source build is completely automatic. Creating the formal FES NAND
-container additionally requires Allwinner/Tina packaging tools and a board loader
-whose redistribution license is not present in this repository. Supply authorized
-local inputs without copying them into Git:
+container additionally requires Allwinner/Tina packaging tools. The board loader
+tool, profile and all required bin inputs are already present in this repository:
 
 ```sh
 TINA_SDK=/absolute/path/to/authorized/Tina-SDK \
-FES_BOOTSTRAP_LOADER=/absolute/path/to/authorized/loader.img \
 ./scripts/one-click-build.sh
 ```
 
-With both variables, the script also builds the FES component package, creates a
+With `TINA_SDK`, the script also builds the FES component package, creates a
 hash-pinned closed bundle, and runs OpenixCLI's no-USB preflight. It never starts
-a media write automatically. Without them, only this licensed packaging stage is
+a media write automatically. Without it, only the FES packaging stage is
 reported as skipped; U-Boot, Linux, Buildroot, rootfs, FIT images, recovery bundle,
 OpenixCLI, and their validation are still built completely.
 
@@ -59,8 +59,7 @@ Connect UART3 PB6/PB7 at 115200 through an independent USB serial adapter. Put
 the T113S3 Pro into FEL and run:
 
 ```sh
-OPENIXCLI_BIN=../OpenixCLI/target/release/openixcli \
-  ./scripts/flash-and-monitor.sh \
+./scripts/flash-and-monitor.sh \
   ./out/t113s3pro-mainline-fel auto /dev/ttyACM0 300
 ```
 
