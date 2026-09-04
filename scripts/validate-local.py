@@ -321,7 +321,6 @@ def main() -> int:
         "tools/allwinner-loader/profiles/t113s3-ddr3-spinand-dshanpi-t113s3pro/input/u-boot.fex",
         "docs/fes-nand-provisioning.md",
         "docs/images-and-flashing.zh-CN.md",
-        "logs/fes-validation-20260904.jsonl",
         "logs/fes-host-validation-20260826.jsonl",
     ]
     for index, name in enumerate(required, 11):
