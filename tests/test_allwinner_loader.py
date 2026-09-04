@@ -27,13 +27,14 @@ class LoaderTests(unittest.TestCase):
             self.assertEqual(info["num_files"], 6)
             self.assertEqual(
                 hashlib.sha256(image.read_bytes()).hexdigest(),
-                "a2e0e97014e70c7043b634138639444026a4e582f5569bb81c845c6d959d1ea5",
+                "26f4e5bc7a0e9ad77f3205c9a139a787b946c2812e6a521b7673a58e5b38f2b3",
             )
             self.assertTrue(metadata.is_file())
 
     def test_current_profile_is_ram_only(self):
         data, entries = loader.load_manifest(self.manifest)
         self.assertFalse(data["flash_payload"])
+        self.assertEqual(data["hardware_validation"], "hil-passed")
         self.assertTrue(all(entry["flash_to_media"] is False for entry in entries))
 
 

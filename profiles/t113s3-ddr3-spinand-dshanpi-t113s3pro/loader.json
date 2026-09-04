@@ -11,13 +11,13 @@
   "storage_capacity_mib": 256,
   "product_name": "dshanpi-t113s3pro",
   "output_name": "t113s3-ddr3-spinand-dshanpi-t113s3pro-loader.bin",
-  "expected_output_sha256": "a2e0e97014e70c7043b634138639444026a4e582f5569bb81c845c6d959d1ea5",
+  "expected_output_sha256": "26f4e5bc7a0e9ad77f3205c9a139a787b946c2812e6a521b7673a58e5b38f2b3",
   "purpose": "ram-fes-bootstrap",
   "flash_payload": false,
   "container_format": "imagewty-v3",
-  "hardware_validation": "ram-bootstrap-passed",
+  "hardware_validation": "hil-passed",
   "source_project": "Allwinner Tina 5.0 v1.2 t113/evb1_auto_nand",
-  "source_revision": "local-build-2026-08-22",
+  "source_revision": "patched-mainline-component-support-2026-08-26",
   "entries": [
     {
       "role": "mbr-placeholder",
@@ -69,8 +69,8 @@
       "path": "input/u-boot.fex",
       "maintype": "12345678",
       "subtype": "UBOOT_0000000000",
-      "sha256": "47c38d7f2fe1d3ec026e180c0d6ba10206ab4fb780e00d25b878ac424eeac44b",
-      "packed_sha256": "47c38d7f2fe1d3ec026e180c0d6ba10206ab4fb780e00d25b878ac424eeac44b",
+      "sha256": "5defba5802b76fe3b5dbdb8dcfadc66c911e3f5c283b7780596c3f71b80707df",
+      "packed_sha256": "5defba5802b76fe3b5dbdb8dcfadc66c911e3f5c283b7780596c3f71b80707df",
       "flash_to_media": false
     }
   ]
