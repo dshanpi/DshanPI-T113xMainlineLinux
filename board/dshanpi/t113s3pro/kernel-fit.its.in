@@ -1,0 +1,40 @@
+/dts-v1/;
+
+/ {
+	description = "DshanPi T113S3 Pro mainline Linux";
+	#address-cells = <1>;
+
+	images {
+		kernel {
+			description = "Linux 6.18.8";
+			data = /incbin/("@KERNEL@");
+			type = "kernel";
+			arch = "arm";
+			os = "linux";
+			compression = "none";
+			load = <0x42000000>;
+			entry = <0x42000000>;
+			hash-1 { algo = "sha256"; };
+		};
+
+		fdt {
+			description = "DshanPi T113S3 Pro device tree";
+			data = /incbin/("@DTB@");
+			type = "flat_dt";
+			arch = "arm";
+			compression = "none";
+			load = <0x43000000>;
+			hash-1 { algo = "sha256"; };
+		};
+	};
+
+	configurations {
+		default = "conf";
+		conf {
+			description = "Linux 6.18.8 on DshanPi T113S3 Pro";
+			kernel = "kernel";
+			fdt = "fdt";
+		};
+	};
+};
+

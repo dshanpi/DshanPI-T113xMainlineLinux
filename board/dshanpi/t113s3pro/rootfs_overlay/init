@@ -1,0 +1,3 @@
+#!/bin/sh
+# Compatibility entry point for images that pass init=/init.
+exec /sbin/init "$@"

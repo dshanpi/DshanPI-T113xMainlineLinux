@@ -1,0 +1,137 @@
+#!/bin/sh
+
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev 2>/dev/null || true
+mkdir -p /dev/pts /run /tmp
+mount -t devpts devpts /dev/pts 2>/dev/null || true
+
+exec </dev/ttyS3 >/dev/ttyS3 2>&1
+
+echo
+echo "T113S3 MAINLINE SPI-NAND INSTALLER"
+echo "LYNX_PROGRESS phase=installer_started progress=55 partition=payload"
+echo "Kernel and MTD geometry:"
+uname -a
+cat /proc/mtd
+for node in /sys/class/mtd/mtd*/writesize /sys/class/mtd/mtd*/erasesize \
+	/sys/class/mtd/mtd*/bad_blocks; do
+	[ -r "$node" ] && echo "$node=$(cat "$node")"
+done
+fail_shell()
+{
+	echo
+	echo "LYNX_PROGRESS phase=installer_failed progress=0 partition=unknown"
+	echo "INSTALL FAILED - emergency shell on ttyS3"
+	exec sh
+}
+
+check_mtd()
+{
+	mtd="$1"
+	name="$2"
+	size="$3"
+	[ "$(cat "/sys/class/mtd/${mtd}/name")" = "$name" ] || fail_shell
+	[ "$(cat "/sys/class/mtd/${mtd}/size")" = "$size" ] || fail_shell
+	[ "$(cat "/sys/class/mtd/${mtd}/writesize")" = 2048 ] || fail_shell
+	[ "$(cat "/sys/class/mtd/${mtd}/erasesize")" = 131072 ] || fail_shell
+}
+
+check_image_size()
+{
+	file="$1"
+	expected="$2"
+	[ "$(wc -c < "$file")" = "$expected" ] || fail_shell
+}
+
+verify_raw_partition()
+{
+	mtd="$1"
+	length="$2"
+	expected="$3"
+	actual="$(nanddump --bb=padbad -l "$length" "/dev/${mtd}" 2>/dev/null | sha256sum)" || fail_shell
+	actual="${actual%% *}"
+	[ "$actual" = "$expected" ] || fail_shell
+	echo "/dev/${mtd} readback SHA-256 OK"
+}
+
+if [ -f /payload-layout ]; then
+	echo "Recovering chunked direct-FEL payload from reserved RAM..."
+	. /payload-layout || fail_shell
+	block_size=4096
+	full_blocks=$((payload_size / block_size))
+	tail_bytes=$((payload_size % block_size))
+	dd if=/dev/mem of=/tmp/final.tar.gz bs="$block_size" \
+		skip=$((payload_address / block_size)) count="$full_blocks" || fail_shell
+	if [ "$tail_bytes" -ne 0 ]; then
+		dd if=/dev/mem of=/tmp/payload.tail bs=1 \
+			skip=$((payload_address + full_blocks * block_size)) \
+			count="$tail_bytes" || fail_shell
+		cat /tmp/payload.tail >> /tmp/final.tar.gz || fail_shell
+		rm -f /tmp/payload.tail
+	fi
+	archive_sha="$(sha256sum /tmp/final.tar.gz)"
+	[ "${archive_sha%% *}" = "$payload_sha256" ] || fail_shell
+	mkdir -p /payload || fail_shell
+	zcat /tmp/final.tar.gz | tar -xf - -C /payload || fail_shell
+	rm -f /tmp/final.tar.gz
+fi
+
+echo "Validating direct FEL payload..."
+echo "LYNX_PROGRESS phase=installer_verify_payload progress=58 partition=payload"
+cd /payload || fail_shell
+sha256sum -c SHA256SUMS || fail_shell
+check_image_size spl-redundant.bin 1048576
+check_image_size uboot-redundant.bin 3145728
+[ -f BOOT_VOLUME ] || fail_shell
+. ./BOOT_VOLUME || fail_shell
+[ "${boot_size}" -le 8388608 ] || fail_shell
+[ "$(wc -c < sys.ubi)" -le 263192576 ] || fail_shell
+
+check_mtd mtd0 spl 1048576
+check_mtd mtd1 uboot 3145728
+check_mtd mtd2 secure-storage 1048576
+check_mtd mtd3 sys 263192576
+
+sys_bad="$(cat /sys/class/mtd/mtd3/bad_blocks)"
+if [ -d /sys/class/ubi/ubi0 ]; then
+	echo "Detaching the pre-existing sys UBI mapping..."
+	ubidetach /dev/ubi_ctrl -m 3 || fail_shell
+fi
+if [ "$sys_bad" = 1953 ]; then
+	echo "Removing the detected legacy alternating-OOB markers..."
+	flash_erase /dev/mtd3 0 0 || fail_shell
+elif [ "$sys_bad" -gt 40 ]; then
+	echo "Unexpected excessive bad-block map; refusing unsafe forced erase"
+	fail_shell
+fi
+
+echo "Writing mainline SPL/U-Boot 2026.07 and Linux 6.18.8 layout..."
+echo "LYNX_PROGRESS phase=installer_write_spl progress=62 partition=spl"
+flash_erase /dev/mtd0 0 0 && nandwrite -p /dev/mtd0 spl-redundant.bin || fail_shell
+echo "LYNX_PROGRESS phase=installer_write_uboot progress=67 partition=uboot"
+flash_erase /dev/mtd1 0 0 && nandwrite -p /dev/mtd1 uboot-redundant.bin || fail_shell
+spl_sha="$(grep '  spl-redundant.bin$' SHA256SUMS)"
+uboot_sha="$(grep '  uboot-redundant.bin$' SHA256SUMS)"
+verify_raw_partition mtd0 1048576 "${spl_sha%% *}"
+verify_raw_partition mtd1 3145728 "${uboot_sha%% *}"
+echo "LYNX_PROGRESS phase=installer_format_ubi progress=78 partition=sys"
+ubiformat /dev/mtd3 -y -f sys.ubi || fail_shell
+echo "LYNX_PROGRESS phase=installer_verify_rootfs progress=94 partition=rootfs"
+ubiattach /dev/ubi_ctrl -m 3 || fail_shell
+ubinfo -a || fail_shell
+[ -c /dev/ubi0_0 ] || fail_shell
+boot_actual="$(dd if=/dev/ubi0_0 bs=1 count="${boot_size}" 2>/dev/null | sha256sum)" || fail_shell
+[ "${boot_actual%% *}" = "${boot_sha256}" ] || fail_shell
+mount -t ubifs ubi0:rootfs /mnt || fail_shell
+[ -x /mnt/sbin/init ] || fail_shell
+umount /mnt || fail_shell
+ubidetach /dev/ubi_ctrl -m 3 || fail_shell
+sync
+echo "LYNX_PROGRESS phase=installer_complete progress=100 partition=none"
+echo "MAINLINE INSTALL COMPLETE - rebooting"
+reboot -f
+
+fail_shell

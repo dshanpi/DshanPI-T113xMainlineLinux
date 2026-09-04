@@ -1,0 +1,41 @@
+From: DshanPi Mainline Team <mainline@dshanpi.com>
+Subject: [PATCH] mtd: spinand: gate DshanPi legacy EE OOB migration
+
+Legacy DshanPi images filled the free OOB bytes of alternating W25N02KV
+eraseblocks with 0xee.  Allow only an explicitly marked installer device
+tree to treat the exact EE EE marker as erasable.  Keep every other non-FF
+marker protected as a bad block.
+
+---
+ drivers/mtd/nand/spi/core.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+--- a/drivers/mtd/nand/spi/core.c
++++ b/drivers/mtd/nand/spi/core.c
+@@ -990,6 +990,23 @@ static bool spinand_isbad(struct nand_device *nand, const struct nand_pos *pos)
+ 		spinand_read_page(spinand, &req);
+ 	}
+ 
++	/*
++	 * The legacy DshanPi image stored 0xee in the complete free OOB area
++	 * of alternating W25N02KV eraseblocks.  That pattern is payload
++	 * metadata, not a factory bad-block marker.  Permit a dedicated
++	 * installer DT to erase those blocks while preserving every other
++	 * non-0xff marker as bad.
++	 */
++	if (marker[0] == 0xee && marker[1] == 0xee &&
++	    spinand->id.len >= 3 && spinand->id.data[0] == 0xef &&
++	    spinand->id.data[1] == 0xaa && spinand->id.data[2] == 0x22 &&
++	    device_property_read_bool(&spinand->spimem->spi->dev,
++				      "dshanpi,legacy-ee-bbm")) {
++		dev_warn_once(&spinand->spimem->spi->dev,
++			      "treating legacy 0xee OOB metadata as erasable\n");
++		return false;
++	}
++
+ 	if (marker[0] != 0xff || marker[1] != 0xff)
+ 		return true;
+ 
+-- 
+2.43.0
+

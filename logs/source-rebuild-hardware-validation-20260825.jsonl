@@ -1,0 +1,9 @@
+{"event":"source","t113Commit":"5859111b0ec505c26b2c1beb2dd60f858ce0dfaa","openixcliCommit":"f10ff48cf938d5a85e45e2a78f241f6602baff06","buildrootCommit":"86102dd8279ac6c4c0244f3e490af98dc7460d5e","classification":"hardware-verified"}
+{"event":"installer_task","taskId":"mainline-1787715829104265529","deviceId":5,"artifactCount":7,"totalBytes":28990738,"status":"success","phase":"complete","progressPct":100.0,"exitCode":0,"startedAt":1787715829,"finishedAt":1787715982}
+{"event":"installer_evidence","markers":["LYNX_PROGRESS phase=installer_complete progress=100","MAINLINE INSTALL COMPLETE","Trying to boot from sunxi SPI","VFS: Mounted root (ubifs filesystem)","t113s3pro-mainline login:"],"result":"warm-reboot-pass"}
+{"event":"power","controller":"lynx_power","deviceId":5,"channel":6,"action":"power_off","createdAt":1787716411,"status":"success"}
+{"event":"power","controller":"lynx_power","deviceId":5,"channel":6,"action":"power_on","createdAt":1787716414,"status":"success","offIntervalSeconds":3}
+{"event":"cold_boot_evidence","markers":["UBIFS: mounted UBI device 0, volume 0, name rootfs","VFS: Mounted root (ubifs filesystem) on device 0:15","DshanPi T113S3 Pro - mainline Buildroot","t113s3pro-mainline login:"],"result":"cold-boot-pass"}
+{"event":"power","controller":"lynx_power","deviceId":5,"channel":6,"action":"power_off","createdAt":1787716468,"status":"success"}
+{"event":"power","controller":"lynx_power","deviceId":5,"channel":6,"action":"power_on","createdAt":1787716470,"status":"success","offIntervalSeconds":2}
+{"event":"cold_boot_revalidation","markers":["VFS: Mounted root (ubifs filesystem)","t113s3pro-mainline login:"],"result":"cold-boot-pass"}

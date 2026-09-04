@@ -1,0 +1,232 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DshanPi SDK <sdk@dshanpi.com>
+Date: Mon, 24 Aug 2026 05:10:00 -0400
+Subject: [PATCH] sunxi: add DshanPi T113S3 Pro SPI NAND target
+
+Give the SPI-NAND board its own identity, device tree and DDR3 configuration.
+Keep the small SPL SPI-NAND reader behind an explicit board opt-in instead of
+changing the SPI boot semantics of every R528/T113 board.
+
+Signed-off-by: DshanPi SDK <sdk@dshanpi.com>
+---
+ arch/arm/mach-sunxi/Kconfig                   |  8 +++
+ arch/arm/mach-sunxi/spl_spi_sunxi.c           |  6 +--
+ configs/dshanpi_t113s3pro_defconfig           | 16 ++++++
+ .../sun8i-t113s-dshanpi-t113s3pro.dts         | 142 ++++++++++++++++++++++++++
+ 4 files changed, 169 insertions(+), 3 deletions(-)
+ create mode 100644 configs/dshanpi_t113s3pro_defconfig
+ create mode 100644 dts/upstream/src/arm/allwinner/sun8i-t113s-dshanpi-t113s3pro.dts
+
+diff --git a/arch/arm/mach-sunxi/Kconfig b/arch/arm/mach-sunxi/Kconfig
+--- a/arch/arm/mach-sunxi/Kconfig
++++ b/arch/arm/mach-sunxi/Kconfig
+@@ -1201,6 +1201,14 @@ config SPL_SPI_SUNXI
+ 	  sunxi SPI Flash. It uses the same method as the boot ROM, so does
+ 	  not need any extra configuration.
+ 
++config SPL_SPI_NAND_SUNXI
++	bool "Support SPI NAND loading in SPL"
++	depends on SPL_SPI_SUNXI && MACH_SUN8I_R528
++	help
++	  Select the page-to-cache SPI NAND loader used by explicitly supported
++	  T113/R528 boards. Other boards keep the normal linear SPI NOR loader.
++	  The initial implementation supports the Winbond W25N02 geometry.
++
+ config PINE64_DT_SELECTION
+ 	bool "Enable Pine64 device tree selection code"
+ 	depends on MACH_SUN50I
+diff --git a/arch/arm/mach-sunxi/spl_spi_sunxi.c b/arch/arm/mach-sunxi/spl_spi_sunxi.c
+--- a/arch/arm/mach-sunxi/spl_spi_sunxi.c
++++ b/arch/arm/mach-sunxi/spl_spi_sunxi.c
+@@ -398,7 +398,7 @@ static void spi0_read_data(void *buf, u32 addr, u32 len)
+ 	u32 chunk_len;
+ 	uintptr_t base = spi0_base_address();
+ 
+-	if (IS_ENABLED(CONFIG_MACH_SUN8I_R528)) {
++	if (IS_ENABLED(CONFIG_SPL_SPI_NAND_SUNXI)) {
+ 		sunxi_spi0_spinand_read_data(buf8, addr, len);
+ 		return;
+ 	}
+@@ -458,7 +458,7 @@ static int spl_spi_load_image(struct spl_image_info *spl_image,
+ 
+ 	spi0_init();
+ 
+-	if (IS_ENABLED(CONFIG_MACH_SUN8I_R528)) {
++	if (IS_ENABLED(CONFIG_SPL_SPI_NAND_SUNXI)) {
+ 		for (; load_offset < 0x400000; load_offset += 0x100000) {
+ 			spi0_read_data((void *)header, load_offset, 0x40);
+ 			if (image_get_magic(header) == IH_MAGIC ||
+@@ -497,7 +497,7 @@ out:
+ }
+ /* Use priorty 0 to override the default if it happens to be linked in */
+ SPL_LOAD_IMAGE_METHOD("sunxi SPI", 0, BOOT_DEVICE_SPI, spl_spi_load_image);
+-#if defined(CONFIG_MACH_SUN8I_R528)
++#if defined(CONFIG_SPL_SPI_NAND_SUNXI)
+ SPL_LOAD_IMAGE_METHOD("sunxi SPI NAND", 0, BOOT_DEVICE_NAND,
+ 		      spl_spi_load_image);
+ #endif
+diff --git a/configs/dshanpi_t113s3pro_defconfig b/configs/dshanpi_t113s3pro_defconfig
+new file mode 100644
+--- /dev/null
++++ b/configs/dshanpi_t113s3pro_defconfig
+@@ -0,0 +1,16 @@
++CONFIG_ARM=y
++CONFIG_ARCH_SUNXI=y
++CONFIG_DEFAULT_DEVICE_TREE="allwinner/sun8i-t113s-dshanpi-t113s3pro"
++CONFIG_DRAM_CLK=792
++CONFIG_SPL=y
++CONFIG_SPL_STACK=0x37ff0
++CONFIG_DRAM_SUNXI_ODT_EN=0
++CONFIG_DRAM_SUNXI_TPR0=0x004a2195
++CONFIG_DRAM_SUNXI_TPR11=0x340000
++CONFIG_DRAM_SUNXI_TPR12=0x46
++CONFIG_DRAM_SUNXI_TPR13=0x34000100
++CONFIG_MACH_SUN8I_R528=y
++CONFIG_DRAM_ZQ=8092667
++CONFIG_SUNXI_MINIMUM_DRAM_MB=128
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_CONS_INDEX=4
+diff --git a/dts/upstream/src/arm/allwinner/sun8i-t113s-dshanpi-t113s3pro.dts b/dts/upstream/src/arm/allwinner/sun8i-t113s-dshanpi-t113s3pro.dts
+new file mode 100644
+--- /dev/null
++++ b/dts/upstream/src/arm/allwinner/sun8i-t113s-dshanpi-t113s3pro.dts
+@@ -0,0 +1,137 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/* Mainline U-Boot device tree for the DshanPi T113S3 Pro. */
++
++/dts-v1/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include "sun8i-t113s.dtsi"
++
++/ {
++	model = "DshanPi T113S3 Pro";
++	compatible = "dshanpi,t113s3pro", "allwinner,sun8i-t113s";
++
++	aliases {
++		serial3 = &uart3;
++	};
++
++	chosen {
++		stdout-path = "serial3:115200n8";
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x08000000>;
++	};
++
++	reg_vcc5v: regulator-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-5v";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-always-on;
++	};
++
++	reg_3v3: regulator-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&reg_vcc5v>;
++		regulator-always-on;
++	};
++
++	reg_vcc_core: regulator-core {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-core";
++		regulator-min-microvolt = <880000>;
++		regulator-max-microvolt = <880000>;
++		vin-supply = <&reg_vcc5v>;
++		regulator-always-on;
++	};
++};
++
++&cpu0 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&cpu1 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&dcxo {
++	clock-frequency = <24000000>;
++};
++
++&pio {
++	vcc-pb-supply = <&reg_3v3>;
++	vcc-pc-supply = <&reg_3v3>;
++	vcc-pe-supply = <&reg_3v3>;
++	vcc-pf-supply = <&reg_3v3>;
++
++	spi0_quad_pins: spi0-quad-pins {
++		pins = "PC2", "PC4", "PC5", "PC6", "PC7";
++		function = "spi0";
++		drive-strength = <10>;
++	};
++
++	spi0_cs_pin: spi0-cs-pins {
++		pins = "PC3";
++		function = "spi0";
++		drive-strength = <10>;
++		bias-pull-up;
++	};
++};
++
++&uart3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart3_pb_pins>;
++	status = "okay";
++};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_quad_pins>, <&spi0_cs_pin>;
++	status = "okay";
++
++	flash@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <50000000>;
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "spl";
++				reg = <0x00000000 0x00100000>;
++			};
++
++			partition@100000 {
++				label = "uboot";
++				reg = <0x00100000 0x00300000>;
++			};
++
++			partition@400000 {
++				label = "secure-storage";
++				reg = <0x00400000 0x00100000>;
++				read-only;
++			};
++
++			partition@500000 {
++				label = "sys";
++				reg = <0x00500000 0x0fb00000>;
++			};
++		};
++	};
++};
++
++&usb_otg {
++	dr_mode = "peripheral";
++	status = "okay";
++};
++
++&usbphy {
++	usb1_vbus-supply = <&reg_vcc5v>;
++	status = "okay";
++};
+-- 
+2.43.0

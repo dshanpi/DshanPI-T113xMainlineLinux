@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dshanpi.com/schemas/fes-nand-components-v1.json",
+  "title": "DshanPi FES NAND component manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "route", "board", "soc", "bootstrap", "firmwarePackage", "storage", "layout", "components"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "route": {"const": "fes_nand_components"},
+    "board": {"const": "dshanpi-t113s3pro"},
+    "soc": {"const": "r528"},
+    "bootstrap": {"$ref": "#/$defs/bootstrapArtifact"},
+    "firmwarePackage": {"$ref": "#/$defs/artifact"},
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "capacityBytes", "pageSize", "eraseSize", "capacityProbePolicy"],
+      "properties": {
+        "kind": {"const": "spi-nand"},
+        "capacityBytes": {"const": 268435456},
+        "pageSize": {"const": 2048},
+        "eraseSize": {"const": 131072},
+        "capacityProbePolicy": {"const": "fes-logical-or-unavailable"}
+      }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "partitions", "fesPartitions"],
+      "properties": {
+        "version": {"const": "t113s3pro-mainline-v1"},
+        "partitions": {
+          "const": [
+            {"name": "spl", "offset": 0, "size": 1048576},
+            {"name": "uboot", "offset": 1048576, "size": 3145728},
+            {"name": "secure-storage", "offset": 4194304, "size": 1048576},
+            {"name": "sys", "offset": 5242880, "size": 263192576}
+          ]
+        },
+        "fesPartitions": {
+          "const": [
+            {"name": "boot", "addressSectors": 504, "sizeSectors": 16632},
+            {"name": "rootfs", "addressSectors": 17136, "sizeSectors": 81900},
+            {"name": "UDISK", "addressSectors": 99036, "sizeSectors": 0}
+          ]
+        }
+      }
+    },
+    "components": {"type": "array", "items": {"$ref": "#/$defs/component"}, "minItems": 4}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "sha256"],
+      "properties": {"file": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "bootstrapArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "sha256", "requiredMarkers"],
+      "properties": {
+        "file": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "requiredMarkers": {"const": ["mainline u-boot size", "mainline eGON SPL size"]}
+      }
+    },
+    "partition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "offset", "size"],
+      "properties": {"name": {"type": "string"}, "offset": {"type": "integer", "minimum": 0}, "size": {"type": "integer", "minimum": 131072}}
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "contentType", "partition", "file", "packageFile", "sha256"],
+      "properties": {
+        "role": {"enum": ["boot0", "boot1", "partition"]},
+        "contentType": {"enum": ["egon-boot0", "legacy-uboot", "fit", "ubifs"]},
+        "partition": {"type": ["string", "null"]},
+        "file": {"type": "string", "minLength": 1},
+        "packageFile": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

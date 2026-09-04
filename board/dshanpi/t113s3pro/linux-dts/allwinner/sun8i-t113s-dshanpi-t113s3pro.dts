@@ -1,0 +1,183 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Mainline Linux device tree for the DshanPi T113S3 Pro SPI-NAND board.
+ *
+ * Hardware facts are derived from the known-good Tina evb1_auto_nand
+ * configuration.  Keep this file limited to bindings accepted upstream.
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include "sun8i-t113s.dtsi"
+
+/ {
+	model = "DshanPi T113S3 Pro (mainline)";
+	compatible = "dshanpi,t113s3pro", "allwinner,sun8i-t113s";
+
+	aliases {
+		ethernet0 = &emac;
+		serial3 = &uart3;
+	};
+
+	chosen {
+		stdout-path = "serial3:115200n8";
+		bootargs = "earlycon=uart8250,mmio32,0x02500c00 console=ttyS3,115200 ignore_loglevel loglevel=8 ubi.mtd=sys root=ubi0:rootfs rootfstype=ubifs rw rootwait";
+	};
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0x40000000 0x08000000>;
+	};
+
+	reg_vcc5v: regulator-5v {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-5v";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-always-on;
+	};
+
+	reg_vcc3v3: regulator-3v3 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-3v3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&reg_vcc5v>;
+		regulator-always-on;
+	};
+
+	reg_vcc_core: regulator-core {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-core";
+		regulator-min-microvolt = <880000>;
+		regulator-max-microvolt = <880000>;
+		vin-supply = <&reg_vcc5v>;
+		regulator-always-on;
+	};
+};
+
+&cpu0 {
+	cpu-supply = <&reg_vcc_core>;
+};
+
+&cpu1 {
+	cpu-supply = <&reg_vcc_core>;
+};
+
+&dcxo {
+	clock-frequency = <24000000>;
+};
+
+&pio {
+	vcc-pb-supply = <&reg_vcc3v3>;
+	vcc-pc-supply = <&reg_vcc3v3>;
+	vcc-pe-supply = <&reg_vcc3v3>;
+	vcc-pf-supply = <&reg_vcc3v3>;
+
+	spi0_quad_pins: spi0-quad-pins {
+		pins = "PC2", "PC4", "PC5", "PC6", "PC7";
+		function = "spi0";
+		drive-strength = <10>;
+	};
+
+	spi0_cs_pin: spi0-cs-pins {
+		pins = "PC3";
+		function = "spi0";
+		drive-strength = <10>;
+		bias-pull-up;
+	};
+};
+
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart3_pb_pins>;
+	status = "okay";
+};
+
+&mmc0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mmc0_pins>;
+	vmmc-supply = <&reg_vcc3v3>;
+	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>; /* PF6 */
+	disable-wp;
+	bus-width = <4>;
+	status = "okay";
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_quad_pins>, <&spi0_cs_pin>;
+	status = "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		spi-rx-bus-width = <4>;
+		spi-tx-bus-width = <4>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "spl";
+				reg = <0x00000000 0x00100000>;
+			};
+
+			partition@100000 {
+				label = "uboot";
+				reg = <0x00100000 0x00300000>;
+			};
+
+			partition@400000 {
+				label = "secure-storage";
+				reg = <0x00400000 0x00100000>;
+				read-only;
+			};
+
+			partition@500000 {
+				label = "sys";
+				reg = <0x00500000 0x0fb00000>;
+			};
+		};
+	};
+};
+
+&emac {
+	pinctrl-names = "default";
+	pinctrl-0 = <&rmii_pe_pins>;
+	phy-handle = <&ext_rmii_phy>;
+	phy-mode = "rmii";
+	allwinner,tx-delay-ps = <300>;
+	allwinner,rx-delay-ps = <0>;
+	status = "okay";
+};
+
+&mdio {
+	ext_rmii_phy: ethernet-phy@0 {
+		reg = <0>;
+		reset-gpios = <&pio 4 10 GPIO_ACTIVE_LOW>; /* PE10 */
+		reset-assert-us = <10000>;
+		reset-deassert-us = <100000>;
+	};
+};
+
+&ehci1 {
+	status = "okay";
+};
+
+&ohci1 {
+	status = "okay";
+};
+
+&usb_otg {
+	dr_mode = "peripheral";
+	status = "okay";
+};
+
+&usbphy {
+	usb1_vbus-supply = <&reg_vcc5v>;
+	status = "okay";
+};

@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DshanPi SDK <sdk@dshanpi.com>
+Date: Tue, 25 Aug 2026 06:15:00 -0400
+Subject: [PATCH] sunxi: recognize the R528 SPI-NAND boot source
+
+The R528/T113 BootROM writes boot_media value 4 when it loaded eGON SPL
+from SPI-NAND.  Route that value through the sunxi SPI loader selected by
+CONFIG_SPL_SPI_NAND_SUNXI instead of panicking before the loader runs.
+
+Signed-off-by: DshanPi SDK <sdk@dshanpi.com>
+---
+ arch/arm/include/asm/arch-sunxi/spl.h | 2 ++
+ arch/arm/mach-sunxi/board.c            | 1 +
+ 2 files changed, 3 insertions(+)
+
+diff --git a/arch/arm/include/asm/arch-sunxi/spl.h b/arch/arm/include/asm/arch-sunxi/spl.h
+--- a/arch/arm/include/asm/arch-sunxi/spl.h
++++ b/arch/arm/include/asm/arch-sunxi/spl.h
+@@ -16,6 +16,8 @@
+ #define SUNXI_BOOTED_FROM_NAND	1
+ #define SUNXI_BOOTED_FROM_MMC2	2
+ #define SUNXI_BOOTED_FROM_SPI	3
++/* R528/T113 BootROM distinguishes SPI NAND from SPI NOR. */
++#define SUNXI_BOOTED_FROM_SPINAND	4
+ #define SUNXI_BOOTED_FROM_MMC0_HIGH	0x10
+ #define SUNXI_BOOTED_FROM_MMC2_HIGH	0x12
+ 
+diff --git a/arch/arm/mach-sunxi/board.c b/arch/arm/mach-sunxi/board.c
+--- a/arch/arm/mach-sunxi/board.c
++++ b/arch/arm/mach-sunxi/board.c
+@@ -323,6 +323,7 @@ uint32_t sunxi_get_boot_device(void)
+ 	case SUNXI_BOOTED_FROM_MMC2_HIGH:
+ 		return BOOT_DEVICE_MMC2;
+ 	case SUNXI_BOOTED_FROM_SPI:
++	case SUNXI_BOOTED_FROM_SPINAND:
+ 		return BOOT_DEVICE_SPI;
+ 	}
+ 
+-- 
+2.43.0
+

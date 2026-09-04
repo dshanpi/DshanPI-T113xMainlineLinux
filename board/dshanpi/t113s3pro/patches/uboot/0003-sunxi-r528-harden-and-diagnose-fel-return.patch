@@ -1,0 +1,106 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DshanPi SDK <sdk@dshanpi.com>
+Date: Mon, 24 Aug 2026 10:00:00 -0400
+Subject: [PATCH] sunxi: r528: preserve FEL clocks and diagnose SPL return
+
+The R528/T113 BootROM enables PLL_PERI0 while servicing FEL over USB. Do not
+reprogram that active PLL during SPL clock setup: doing so can leave the USB
+controller without a stable clock when SPL returns to the BootROM.
+
+Preserve the standard upstream handoff, make the saved BootROM context visible
+during board bring-up and issue explicit ARM synchronization barriers around
+the VBAR/SCTLR restoration.
+
+The option is board-selected and does not add a loader or protocol.
+
+Signed-off-by: DshanPi SDK <sdk@dshanpi.com>
+---
+ arch/arm/cpu/armv7/sunxi/fel_utils.S | 10 ++++++++++
+ arch/arm/mach-sunxi/Kconfig          |  9 +++++++++
+ arch/arm/mach-sunxi/board.c          |  4 ++++
+ arch/arm/mach-sunxi/clock_sun50i_h6.c | 15 ++++++++++++---
+ 4 files changed, 35 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/sunxi/fel_utils.S b/arch/arm/cpu/armv7/sunxi/fel_utils.S
+--- a/arch/arm/cpu/armv7/sunxi/fel_utils.S
++++ b/arch/arm/cpu/armv7/sunxi/fel_utils.S
+@@ -26,10 +26,20 @@ ENTRY(return_to_fel)
+ 	mov	sp, r0
+ 	mov	lr, r1
+ 	ldr	r0, =fel_stash
++#ifdef CONFIG_SPL_FEL_RETURN_DIAGNOSTIC
++	/* Complete SPL memory traffic before restoring the BootROM view. */
++	dsb	sy
++#endif
+ 	ldr	r1, [r0, #16]
+ 	mcr	p15, 0, r1, c12, c0, 0	@ Write VBAR
++#ifdef CONFIG_SPL_FEL_RETURN_DIAGNOSTIC
++	isb	sy
++#endif
+ 	ldr	r1, [r0, #12]
+ 	mcr	p15, 0, r1, c1, c0, 0	@ Write CP15 SCTLR Register
++#ifdef CONFIG_SPL_FEL_RETURN_DIAGNOSTIC
++	isb	sy
++#endif
+ 	ldr	r1, [r0, #8]
+ 	msr	cpsr, r1		@ Write CPSR
+ 	bx	lr
+diff --git a/arch/arm/mach-sunxi/Kconfig b/arch/arm/mach-sunxi/Kconfig
+--- a/arch/arm/mach-sunxi/Kconfig
++++ b/arch/arm/mach-sunxi/Kconfig
+@@ -1209,6 +1209,15 @@ config SPL_SPI_NAND_SUNXI
+ 	  T113/R528 boards. Other boards keep the normal linear SPI NOR loader.
+ 	  The initial implementation supports the Winbond W25N02 geometry.
+ 
++config SPL_FEL_RETURN_DIAGNOSTIC
++	bool "Harden and diagnose the R528 SPL return to FEL"
++	depends on MACH_SUN8I_R528
++	help
++	  Print the BootROM context saved at SPL entry and issue the ARM
++	  synchronization barriers required before restoring VBAR and SCTLR.
++	  This is intended for board bring-up of the standard sunxi-fel SPL
++	  handoff and does not add a vendor loader or USB protocol.
++
+ config PINE64_DT_SELECTION
+ 	bool "Enable Pine64 device tree selection code"
+ 	depends on MACH_SUN50I
+diff --git a/arch/arm/mach-sunxi/board.c b/arch/arm/mach-sunxi/board.c
+--- a/arch/arm/mach-sunxi/board.c
++++ b/arch/arm/mach-sunxi/board.c
+@@ -216,4 +216,8 @@ static int spl_board_load_image(struct spl_image_info *spl_image,
+ 				struct spl_boot_device *bootdev)
+ {
++	if (IS_ENABLED(CONFIG_SPL_FEL_RETURN_DIAGNOSTIC))
++		printf("FEL return: sp=%08x lr=%08x cpsr=%08x sctlr=%08x vbar=%08x\n",
++		       fel_stash.sp, fel_stash.lr, fel_stash.cpsr,
++		       fel_stash.sctlr, fel_stash.vbar);
+ 	debug("Returning to FEL sp=%x, lr=%x\n", fel_stash.sp, fel_stash.lr);
+ 	return_to_fel(fel_stash.sp, fel_stash.lr);
+diff --git a/arch/arm/mach-sunxi/clock_sun50i_h6.c b/arch/arm/mach-sunxi/clock_sun50i_h6.c
+--- a/arch/arm/mach-sunxi/clock_sun50i_h6.c
++++ b/arch/arm/mach-sunxi/clock_sun50i_h6.c
+@@ -44,9 +44,18 @@ void clock_init_safe(void)
+ 
+ 	clock_set_pll1(408000000);
+ 
+-	writel(CCM_PLL6_DEFAULT, ccm + CCU_H6_PLL6_CFG);
+-	while (!(readl(ccm + CCU_H6_PLL6_CFG) & CCM_PLL_LOCK))
+-		;
++	/*
++	 * The R528 BootROM enables PLL_PERI0 while servicing FEL over USB.
++	 * Reprogramming an already running PLL here can make the BootROM USB
++	 * controller lose its clock before SPL returns through the FEL thunk.
++	 * Keep the BootROM setup on R528; cold boot still programs the default.
++	 */
++	if (!IS_ENABLED(CONFIG_MACH_SUN8I_R528) ||
++	    !(readl(ccm + CCU_H6_PLL6_CFG) & CCM_PLL_CTRL_EN)) {
++		writel(CCM_PLL6_DEFAULT, ccm + CCU_H6_PLL6_CFG);
++		while (!(readl(ccm + CCU_H6_PLL6_CFG) & CCM_PLL_LOCK))
++			;
++	}
+ 
+ 	if (!IS_ENABLED(CONFIG_MACH_SUN55I_A523))
+ 		clrsetbits_le32(ccm + CCU_H6_CPU_AXI_CFG,
+-- 
+2.43.0
+
