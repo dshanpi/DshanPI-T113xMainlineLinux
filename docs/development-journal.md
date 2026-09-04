@@ -194,3 +194,16 @@ independent UART3 PB6/PB7 capture began at `U-Boot SPL 2026.07`, reported
 `t113s3pro-mainline login:`. This closes the formal FES NAND component route
 for the exact hardware and hashes recorded in
 `manifests/hardware-verified-fes-v5-20260826.sha256`.
+
+## Unified release FES revalidation, 2026-09-04
+
+The newly packaged unified-release candidate was attempted twice, with a fresh
+manual FEL entry before each task. Both attempts validated the same component
+package and the hardware-verified v5 loader hash. DRAM initialization and the
+966656-byte RAM U-Boot download succeeded, but no FES USB device re-enumerated
+on the bound physical topology. Each task stopped at 8% before erase, with no
+committed media bytes and verification not run. The second post-failure scan
+found no USB device and UART3 returned no bytes. This reproducible failure is
+bounded to FES startup/USB re-enumeration after RAM-loader execution; it is not
+evidence of a partition, MBR, or NAND-write failure. Neither attempt was
+automatically retried.
